@@ -22,7 +22,7 @@ const reauthUrl = computed(() => `${authBaseUrl}/api/auth/discord`)
 <template>
   <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8 text-center">
-      <LogoPro class="mx-auto h-12 w-auto" />
+
       <h1 class="mt-6 text-3xl font-bold text-gray-900 dark:text-white">Access denied</h1>
       <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
         You must be a member of our Discord server to access this site.
