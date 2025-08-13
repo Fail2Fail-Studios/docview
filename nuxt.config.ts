@@ -1,5 +1,7 @@
+/* eslint-disable nuxt/nuxt-config-keys-order */
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { fileURLToPath } from 'node:url'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -8,7 +10,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/ui-pro',
     'nuxt-og-image',
-    'nuxt-llms'
+    'nuxt-llms',
+    'nuxt-auth-utils'
   ],
 
   devtools: {
@@ -50,8 +53,19 @@ export default defineNuxtConfig({
 
   icon: {
     provider: 'iconify'
-  }
-  ,
+  },
+
+  runtimeConfig: {
+    // Private keys (only available on server-side)
+    oauthDiscordClientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET,
+    requiredDiscordGuildId: process.env.NUXT_REQUIRED_DISCORD_GUILD_ID || '1402498073350901800',
+
+    // Public keys (exposed to client-side)
+    public: {
+      oauthDiscordClientId: process.env.NUXT_OAUTH_DISCORD_CLIENT_ID,
+      authBaseUrl: process.env.NUXT_AUTH_BASE_URL || 'http://localhost:3000'
+    }
+  },
   vite: {
     resolve: {
       alias: {

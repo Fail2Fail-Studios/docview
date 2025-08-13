@@ -19,9 +19,9 @@ useSeoMeta({
 </script>
 
 <template>
-  <ContentRenderer
-    v-if="page"
-    :value="page"
-    :prose="false"
-  />
+  <UPage>
+    <UPageBody class="w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8">
+      <ContentRenderer v-if="page" :value="page" :prose="false" />
+    </UPageBody>
+  </UPage>
 </template>
