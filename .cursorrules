@@ -1,0 +1,66 @@
+
+      You have extensive expertise in Nuxt 4, Vue 3, TypeScript, Vite, VueUse, Nuxt UI + Nuxt UI Pro, Tailwind CSS v4, and the Nuxt modules used in this project: @nuxt/content, @nuxt/image, nuxt-og-image, and nuxt-llms. Optimize for high-quality DX, performance, and accessibility tailored to this stack.
+
+      Tech Stack Ground Rules
+      - Runtime: Nuxt 4 with the `app/` directory. Use auto-imports (no manual imports for ref, computed, useRouter, etc.).
+      - Modules: `@nuxt/content`, `@nuxt/image`, `@nuxt/ui`, `@nuxt/ui-pro`, `nuxt-og-image`, `nuxt-llms`.
+      - Styling: Tailwind CSS v4 via `@import "tailwindcss"` in `app/assets/css/main.css`. Respect existing CSS variables and themes.
+      - Icons: Iconify provider configured in `nuxt.config.ts` (`icon.provider = 'iconify'`).
+      - Package manager: pnpm (pinned). Use `pnpm` for all scripts and installs.
+
+      Code Style and Structure
+      - Write clean, maintainable, and technically accurate TypeScript.
+      - Prefer Composition API with `<script setup>`; avoid classes.
+      - Embrace functional, declarative patterns; keep modules small and DRY.
+      - Extract reusable logic into composables named `use<Name>` and colocate where appropriate in `app/composables/`.
+      - Use explicit return types for exported composables and utility functions.
+
+      Nuxt 4 Conventions
+      - Directories: Use `app/pages/`, `app/components/`, `app/layouts/`, `app/assets/`, and `app/app.config.ts` for theme and UI config.
+      - Aliases: Prefer `~`, `@`, and `app` aliases as defined in `nuxt.config.ts`.
+      - Devtools: Enabled; do not ship dev-only code.
+      - Server/API: Place sensitive logic under `server/` and `server/api/`. Keep client bundles free of secrets.
+      - Runtime config: Access via `useRuntimeConfig()` for environment-dependent values.
+      - SEO: Use `useHead` and `useSeoMeta`; integrate `nuxt-og-image` for social cards where relevant.
+      - Images: Use `<NuxtImage>` / `<NuxtPicture>` with presets; avoid raw `<img>` for remote assets.
+      - Content: Author docs in `content/`. Leverage MDC and components; respect the configured markdown TOC.
+
+      Data Fetching
+      1. Prefer `useFetch` in pages/components to benefit from SSR, caching, and URL reactivity.
+      2. Use `$fetch` for event handlers or purely client-side interactions where SSR is unnecessary.
+      3. Use `useAsyncData` for multi-source/advanced fetching, custom keys, or bespoke caching.
+      4. Set `{ server: false }` to make a fetch client-only when needed.
+      5. Use `{ lazy: true }` for non-critical or below-the-fold data.
+
+      Naming Conventions
+      - Components: PascalCase file names (e.g., `components/MyComponent.vue`).
+      - Composables: `use<MyComposable>` with named exports.
+      - Utilities: Verb-based function names; variables use descriptive nouns.
+
+      TypeScript Usage
+      - Prefer `interface` over `type` for extensibility.
+      - Avoid `enum`; use const objects/maps with union types for keys.
+      - No `any` unless absolutely necessary; add precise generics where useful.
+
+      UI and Styling
+      - Build UIs with Nuxt UI and Nuxt UI Pro components.
+      - Configure tokens, colors, and component defaults in `app/app.config.ts`.
+      - Implement responsive, mobile-first layouts with Tailwind CSS v4 utilities.
+      - Keep component styles minimal; prefer design tokens and utility classes over deep custom CSS.
+
+      Linting, Formatting, and Scripts
+      - ESLint v9 with `@nuxt/eslint`. Respect stylistic rules set in `nuxt.config.ts` (e.g., `commaDangle: 'never'`, `braceStyle: '1tbs'`).
+      - Use project scripts via pnpm:
+        - `pnpm dev`, `pnpm build`, `pnpm generate`, `pnpm preview`
+        - `pnpm lint` and `pnpm typecheck`
+      - Keep edits free of new lint errors; prefer autofix where safe.
+
+      Performance and DX
+      - Keep payloads small; defer non-critical work with `lazy` and dynamic imports.
+      - Use image optimization and sizes with `<NuxtImage>`; prefer presets.
+      - Favor server routes for data aggregation; avoid over-fetching on the client.
+      - Prerender routes as configured in Nitro when appropriate.
+
+      What Not To Add By Default
+      - Do not introduce Pinia or explicit Vue Router usage; Nuxt handles routing and no store is configured.
+      - Do not add `@nuxtjs/color-mode` unless explicitly required; honor Nuxt UI theme tokens already in place.

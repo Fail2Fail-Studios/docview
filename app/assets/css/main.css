@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+@import "@nuxt/ui-pro";
+
+@source "../../../content/**/*";
+
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+
+  --color-green-50: #EFFDF5;
+  --color-green-100: #D9FBE8;
+  --color-green-200: #B3F5D1;
+  --color-green-300: #75EDAE;
+  --color-green-400: #00DC82;
+  --color-green-500: #00C16A;
+  --color-green-600: #00A155;
+  --color-green-700: #007F45;
+  --color-green-800: #016538;
+  --color-green-900: #0A5331;
+  --color-green-950: #052E16;
+}
+
+@layer base {
+  h1 { @apply text-4xl md:text-5xl font-bold tracking-tight; }
+  h2 { @apply mt-10 text-3xl md:text-4xl font-semibold tracking-tight; }
+  h3 { @apply mt-8 text-2xl md:text-3xl font-semibold; }
+  h4 { @apply mt-6 text-xl md:text-2xl font-semibold; }
+  h5 { @apply mt-4 text-lg font-semibold; }
+  h6 { @apply mt-4 text-base font-semibold uppercase tracking-wide; }
+
+  p { @apply leading-7 text-gray-700 dark:text-gray-300; }
+
+  a { @apply text-primary hover:text-primary dark:text-primary dark:hover:text-primary; }
+
+  hr { @apply my-8 border-t border-black dark:border-primary; }
+
+  code { @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm dark:bg-gray-800; }
+}
+
+
