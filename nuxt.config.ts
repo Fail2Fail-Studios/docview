@@ -10,8 +10,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/ui-pro',
     'nuxt-og-image',
-    'nuxt-llms',
-    'nuxt-auth-utils'
+    'nuxt-auth-utils',
+    '@pinia/nuxt'
   ],
 
   devtools: {

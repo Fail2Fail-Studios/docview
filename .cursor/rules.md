@@ -1,8 +1,13 @@
+---
+title: Project Rules
+description: Project scope and outline 
+---
+
 F2F DocView - Project Rules
 
 Project overview
 - Stack: Nuxt 4, Vue 3, TypeScript, @nuxt/content (MDC), @nuxt/ui, @nuxt/ui-pro 3, nuxt-og-image, nuxt-llms.
-- Purpose: Content-driven documentation site with searchable, well-structured docs and a polished UI.
+- Purpose: Content-driven documentation site with searchable, well-structured docs and a polished UI. Docs will be updated in a seperate repo and synced into the content folder using a standardized format.
 
 How to run
 - Install: npm install

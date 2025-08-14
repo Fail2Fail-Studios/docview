@@ -14,7 +14,7 @@
         <!-- Error Messages -->
         <UAlert
           v-if="errorMessage"
-          color="red"
+          color="error"
           variant="soft"
           :title="errorTitle"
           :description="errorMessage"
@@ -30,20 +30,23 @@
           </h3>
         </template>
 
-                <!-- Discord Login -->
+        <!-- Discord Login -->
         <div class="space-y-6">
           <UButton
             block
             size="xl"
-            color="indigo"
+            color="primary"
             variant="solid"
             :loading="isLoading"
             :disabled="isLoading"
-            @click="handleDiscordLogin"
             class="justify-center"
+            @click="handleDiscordLogin"
           >
             <template #leading>
-              <Icon name="i-simple-icons-discord" class="w-5 h-5" />
+              <Icon
+                name="i-simple-icons-discord"
+                class="w-5 h-5"
+              />
             </template>
             {{ isLoading ? 'Connecting...' : 'Continue with Discord' }}
           </UButton>
@@ -56,7 +59,7 @@
         </div>
       </UCard>
 
-            <!-- Footer Info -->
+      <!-- Footer Info -->
       <div class="text-center">
         <p class="text-sm text-gray-600 dark:text-gray-400">
           New users will automatically get an account created when signing in with Discord
@@ -81,10 +84,7 @@ useSeoMeta({
 // Reactive state
 const isLoading = ref(false)
 const route = useRoute()
-const session = useUserSession()
-
-// Auth composable
-const { loginWithDiscord } = useAuth()
+const { user } = useUserSession()
 
 // Error handling
 const errorMessages = {
@@ -111,7 +111,8 @@ async function handleDiscordLogin() {
   isLoading.value = true
 
   try {
-    await loginWithDiscord()
+    // Redirect to Discord OAuth endpoint provided by nuxt-auth-utils
+    await navigateTo('/api/auth/discord', { external: true })
   } catch (error) {
     console.error('Discord login error:', error)
     // Error will be handled via URL redirect with error query param
@@ -120,13 +121,18 @@ async function handleDiscordLogin() {
   }
 }
 
+// Cast user to include Discord member property
+interface AuthUser {
+  isDiscordMember?: boolean
+}
+
 // If already authenticated (and has access), redirect to home
-if (session.user.value && (session.user.value as any).isDiscordMember) {
+if ((user.value as AuthUser)?.isDiscordMember) {
   await navigateTo('/')
 }
 
 watch(
-  () => (session.user.value as any)?.isDiscordMember,
+  () => (user.value as AuthUser)?.isDiscordMember,
   async (isMember) => {
     if (isMember) {
       await navigateTo('/')

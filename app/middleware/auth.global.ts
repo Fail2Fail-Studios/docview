@@ -1,22 +1,19 @@
 export default defineNuxtRouteMiddleware((to) => {
   // Allow public routes
-  const publicPaths = new Set(['/login', '/access-denied'])
-  if (publicPaths.has(to.path)) {
+  const publicPaths = ['/login', '/access-denied', '/']
+  if (publicPaths.includes(to.path)) {
     return
   }
 
-  const session = useUserSession()
+  const { user } = useUserSession()
 
   // Not authenticated → go to login
-  if (!session.user.value) {
+  if (!user.value) {
     return navigateTo('/login')
   }
 
   // Authenticated but not in required Discord guild → access denied
-  const isDiscordMember = (session.user.value as any)?.isDiscordMember === true
-  if (!isDiscordMember) {
+  if (!user.value.isDiscordMember) {
     return navigateTo('/access-denied')
   }
 })
-
-

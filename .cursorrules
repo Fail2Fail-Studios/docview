@@ -3,7 +3,7 @@
 
       Tech Stack Ground Rules
       - Runtime: Nuxt 4 with the `app/` directory. Use auto-imports (no manual imports for ref, computed, useRouter, etc.).
-      - Modules: `@nuxt/content`, `@nuxt/image`, `@nuxt/ui`, `@nuxt/ui-pro`, `nuxt-og-image`, `nuxt-llms`.
+      - Modules: `nuxt-auth-utils` , `@nuxt/content`, `@nuxt/image`, `@nuxt/ui`, `@nuxt/ui-pro`, `nuxt-og-image`, `nuxt-llms`.
       - Styling: Tailwind CSS v4 via `@import "tailwindcss"` in `app/assets/css/main.css`. Respect existing CSS variables and themes.
       - Icons: Iconify provider configured in `nuxt.config.ts` (`icon.provider = 'iconify'`).
       - Package manager: pnpm (pinned). Use `pnpm` for all scripts and installs.
