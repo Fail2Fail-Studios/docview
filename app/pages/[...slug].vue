@@ -78,30 +78,32 @@ const links = computed(() => {
       v-if="page?.body?.toc?.links?.length"
       #right
     >
-      <UContentToc
-        :title="toc?.title"
-        :links="page.body?.toc?.links"
-      >
-        <template
-          v-if="toc?.bottom"
-          #bottom
+      <div class="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto overflow-x-hidden">
+        <UContentToc
+          :title="toc?.title"
+          :links="page.body?.toc?.links"
         >
-          <div
-            class="hidden lg:block space-y-6"
-            :class="{ '!mt-6': page.body?.toc?.links?.length }"
+          <template
+            v-if="toc?.bottom"
+            #bottom
           >
-            <USeparator
-              v-if="page.body?.toc?.links?.length"
-              type="dashed"
-            />
+            <div
+              class="hidden lg:block space-y-6"
+              :class="{ '!mt-6': page.body?.toc?.links?.length }"
+            >
+              <USeparator
+                v-if="page.body?.toc?.links?.length"
+                type="dashed"
+              />
 
-            <UPageLinks
-              :title="toc.bottom.title"
-              :links="links"
-            />
-          </div>
-        </template>
-      </UContentToc>
+              <UPageLinks
+                :title="toc.bottom.title"
+                :links="links"
+              />
+            </div>
+          </template>
+        </UContentToc>
+      </div>
     </template>
   </UPage>
 </template>

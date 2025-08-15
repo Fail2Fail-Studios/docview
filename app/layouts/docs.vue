@@ -6,11 +6,13 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 </script>
 
 <template>
-  <UContainer class="w-full h-full">
+  <UContainer class="w-full">
     <UPage>
       <template #left>
         <UPageAside>
-          <UContentNavigation highlight :navigation="navigation" />
+          <UContentNavigation
+            :navigation="navigation"
+          />
         </UPageAside>
       </template>
       <main>

@@ -83,8 +83,7 @@ async function handleLogout() {
           [
             {
               label: user?.name || user?.username || 'User',
-              slot: 'account',
-              disabled: true
+              slot: 'account'
             }
           ],
           [
