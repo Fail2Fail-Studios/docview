@@ -24,7 +24,8 @@
     "nuxt": "^4.0.0",
     "nuxt-auth-utils": "^0.5.23",
     "nuxt-og-image": "^5.1.9",
-    "pinia": "^3.0.3"
+    "pinia": "^3.0.3",
+    "sass": "^1.90.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.5.2",
