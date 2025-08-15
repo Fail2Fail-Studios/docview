@@ -23,7 +23,7 @@ useSeoMeta({
 
 <template>
   <UPage>
-    <UPageBody class="w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8">
+    <UPageBody class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <ContentRenderer
         v-if="page"
         id="main-content"

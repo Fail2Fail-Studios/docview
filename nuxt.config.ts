@@ -10,8 +10,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/ui-pro',
     'nuxt-og-image',
-    'nuxt-auth-utils',
-    '@pinia/nuxt'
+    'nuxt-auth-utils'
   ],
 
   ui: {
@@ -35,6 +34,18 @@ export default defineNuxtConfig({
 
   css: ['app/assets/css/main.css'],
 
+  image: {
+    presets: {
+      logo: {
+        modifiers: {
+          format: 'webp',
+          quality: 90,
+          fit: 'contain'
+        }
+      }
+    }
+  },
+
   content: {
     build: {
       markdown: {
@@ -50,7 +61,22 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       routes: [
-        '/'
+        '/',
+        // Main content sections
+        '/overview',
+        '/game-design',
+        '/features',
+        '/systems',
+        '/stages',
+        // Key feature pages
+        '/features/mission-system',
+        '/features/squad-system',
+        '/features/combat-system',
+        '/features/core-game-systems',
+        // Stage overview pages
+        '/stages/stage-1',
+        '/stages/stage-2',
+        '/stages/stage-3'
       ],
       crawlLinks: true,
       autoSubfolderIndex: false

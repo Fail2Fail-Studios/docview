@@ -44,11 +44,13 @@ async function handleLogout() {
         v-if="header?.logo?.dark || header?.logo?.light"
         :to="header?.to || '/'"
       >
-        <UColorModeImage
-          :light="header?.logo?.light!"
-          :dark="header?.logo?.dark!"
+        <NuxtPicture
+          :src="$colorMode.value === 'dark' ? header?.logo?.dark! : header?.logo?.light!"
           :alt="header?.logo?.alt"
           class="h-6 w-auto shrink-0"
+          sizes="sm:64px md:64px lg:64px"
+          preset="logo"
+          preload
         />
       </NuxtLink>
 
