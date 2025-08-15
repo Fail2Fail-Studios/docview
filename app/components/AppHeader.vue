@@ -66,19 +66,8 @@ async function handleLogout() {
       <UColorModeButton v-if="header?.colorMode" />
 
       <!-- Auth Section -->
-      <UButton
-        v-if="!loggedIn"
-        to="/login"
-        color="neutral"
-        variant="soft"
-        size="sm"
-        icon="i-lucide-log-in"
-      >
-        Sign In
-      </UButton>
-
       <UDropdownMenu
-        v-else
+        v-if="loggedIn"
         :items="[
           [
             {
