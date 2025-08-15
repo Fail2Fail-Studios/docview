@@ -23,14 +23,21 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 </template>
 
 <style>
-#main-content ul {
+#main-content ul,
+#main-content ol {
   padding-left: 1rem;
-  line-height: 1.5;
+
+}
+
+#main-content ul {
   list-style-type: disc;
 }
 
-#main-content ul li {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+#main-content ol {
+  list-style-type: decimal;
+}
+
+#main-content li {
+  line-height: 1.8;
 }
 </style>
