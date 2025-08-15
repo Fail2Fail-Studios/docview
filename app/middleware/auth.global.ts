@@ -13,7 +13,7 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   // Authenticated but not in required Discord guild → access denied
-  if (!user.value.isDiscordMember) {
-    return navigateTo('/access-denied')
+  if (!(user.value as any).isDiscordMember) {
+    return navigateTo('/login')
   }
 })

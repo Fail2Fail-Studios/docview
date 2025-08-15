@@ -2,15 +2,33 @@
 import type { Ref } from 'vue'
 import type { ContentNavigationItem } from '@nuxt/content'
 
+// Extended user interface for Discord auth
+interface DiscordUser {
+  id: string
+  email: string
+  name: string
+  avatar?: string
+  discordId: string
+  username: string
+  discriminator: string
+  isDiscordMember: boolean
+}
+
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 const { header } = useAppConfig()
-const { loggedIn, clear } = useUserSession()
+const { user: rawUser, loggedIn, clear } = useUserSession()
+
+// Type-safe user with Discord properties
+const user = computed(() => rawUser.value as DiscordUser | null)
 
 // Simple logout handler that uses nuxt-auth-utils properly
 async function handleLogout() {
+  console.log('handleLogout called')
   await clear()
   await navigateTo('/login')
 }
+
+// Handle dropdown menu selection - not needed with onClick pattern
 </script>
 
 <template>
@@ -51,7 +69,7 @@ async function handleLogout() {
       <UButton
         v-if="!loggedIn"
         to="/login"
-        color="primary"
+        color="neutral"
         variant="soft"
         size="sm"
         icon="i-lucide-log-in"
@@ -59,16 +77,46 @@ async function handleLogout() {
         Sign In
       </UButton>
 
-      <UButton
+      <UDropdownMenu
         v-else
-        color="primary"
-        variant="soft"
-        size="sm"
-        icon="i-lucide-log-out"
-        @click="handleLogout"
+        :items="[
+          [
+            {
+              label: user?.name || user?.username || 'User',
+              slot: 'account',
+              disabled: true
+            }
+          ],
+          [
+            {
+              label: 'Sign Out',
+              icon: 'i-lucide-log-out',
+              onClick: () => {
+                console.log('Sign Out clicked!');
+                handleLogout();
+              }
+            }
+          ]
+        ]"
       >
-        Sign Out
-      </UButton>
+        <UAvatar
+          :src="user?.avatar"
+          :alt="user?.name || user?.username"
+          size="sm"
+          class="cursor-pointer"
+        />
+
+        <template #account="{ item }">
+          <div class="text-left">
+            <p class="font-medium text-gray-900 dark:text-white">
+              {{ item.label }}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ user?.email }}
+            </p>
+          </div>
+        </template>
+      </UDropdownMenu>
     </template>
 
     <template #body>
