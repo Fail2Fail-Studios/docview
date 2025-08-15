@@ -1,6 +1,6 @@
 export default defineNuxtRouteMiddleware((to) => {
   // Allow public routes
-  const publicPaths = ['/login', '/access-denied', '/']
+  const publicPaths = ['/login', '/access-denied']
   if (publicPaths.includes(to.path)) {
     return
   }

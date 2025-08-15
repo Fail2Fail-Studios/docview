@@ -18,6 +18,19 @@
   --color-green-800: #016538;
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
+
+  /* Discord brand colors */
+  --color-discord-50: #EEF2FF;
+  --color-discord-100: #E0E7FF;
+  --color-discord-200: #C7D2FE;
+  --color-discord-300: #A5B4FC;
+  --color-discord-400: #818CF8;
+  --color-discord-500: #5865F2;
+  --color-discord-600: #4F46E5;
+  --color-discord-700: #4338CA;
+  --color-discord-800: #3730A3;
+  --color-discord-900: #312E81;
+  --color-discord-950: #1E1B4B;
 }
 
 @layer base {

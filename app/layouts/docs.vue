@@ -1,9 +1,12 @@
 <script setup lang="ts">
-const navigation = useSanitizedNavigation()
+import type { Ref } from 'vue'
+import type { ContentNavigationItem } from '@nuxt/content'
+
+const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 </script>
 
 <template>
-  <UContainer>
+  <UContainer class="w-full h-full">
     <UPage>
       <template #left>
         <UPageAside>

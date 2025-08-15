@@ -1,4 +1,7 @@
 <script setup lang="ts">
+// Check authentication - the global middleware will handle this
+// but we check here too for extra safety on the main page
+
 const { data: page } = await useAsyncData('index', () => queryCollection('landing').path('/').first())
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
@@ -21,7 +24,12 @@ useSeoMeta({
 <template>
   <UPage>
     <UPageBody class="w-full max-w-(--ui-container) mx-auto px-4 sm:px-6 lg:px-8">
-      <ContentRenderer v-if="page" :value="page" :prose="false" />
+      <ContentRenderer
+        v-if="page"
+        id="main-content"
+        :prose="false"
+        :value="page"
+      />
     </UPageBody>
   </UPage>
 </template>

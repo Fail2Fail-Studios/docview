@@ -1,5 +1,8 @@
 <script setup lang="ts">
-const navigation = useSanitizedNavigation()
+import type { Ref } from 'vue'
+import type { ContentNavigationItem } from '@nuxt/content'
+
+const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 const { header } = useAppConfig()
 const { loggedIn, clear } = useUserSession()
 
@@ -13,7 +16,7 @@ async function handleLogout() {
 <template>
   <UHeader :ui="{ center: 'flex-1' }">
     <UContentSearchButton
-      v-if="header?.search"
+      v-if="header?.search && loggedIn"
       :collapsed="false"
       class="w-full"
     />
