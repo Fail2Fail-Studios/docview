@@ -1,9 +1,9 @@
 
-      You have extensive expertise in Nuxt 4, Vue 3, TypeScript, Vite, VueUse, Nuxt UI + Nuxt UI Pro, Tailwind CSS v4, and the Nuxt modules used in this project: @nuxt/content, @nuxt/image, nuxt-og-image, and nuxt-llms. Optimize for high-quality DX, performance, and accessibility tailored to this stack.
+      You have extensive expertise in Nuxt 4, Vue 3, TypeScript, Vite, VueUse, Nuxt UI + Nuxt UI Pro, Tailwind CSS v4, and the Nuxt modules used in this project: @nuxt/content, @nuxt/image, and nuxt-og-image. Optimize for high-quality DX, performance, and accessibility tailored to this stack.
 
       Tech Stack Ground Rules
       - Runtime: Nuxt 4 with the `app/` directory. Use auto-imports (no manual imports for ref, computed, useRouter, etc.).
-      - Modules: `nuxt-auth-utils` , `@nuxt/content`, `@nuxt/image`, `@nuxt/ui`, `@nuxt/ui-pro`, `nuxt-og-image`, `nuxt-llms`.
+      - Modules: `nuxt-auth-utils` , `@nuxt/content`, `@nuxt/image`, `@nuxt/ui`, `@nuxt/ui-pro`, `nuxt-og-image`.
       - Styling: Tailwind CSS v4 via `@import "tailwindcss"` in `app/assets/css/main.css`. Respect existing CSS variables and themes.
       - Icons: Iconify provider configured in `nuxt.config.ts` (`icon.provider = 'iconify'`).
       - Package manager: pnpm (pinned). Use `pnpm` for all scripts and installs.

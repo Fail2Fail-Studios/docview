@@ -6,17 +6,17 @@ description: Project scope and outline
 F2F DocView - Project Rules
 
 Project overview
-- Stack: Nuxt 4, Vue 3, TypeScript, @nuxt/content (MDC), @nuxt/ui, @nuxt/ui-pro 3, nuxt-og-image, nuxt-llms.
+- Stack: Nuxt 4, Vue 3, TypeScript, @nuxt/content (MDC), @nuxt/ui, @nuxt/ui-pro 3, nuxt-og-image.
 - Purpose: Content-driven documentation site with searchable, well-structured docs and a polished UI. Docs will be updated in a seperate repo and synced into the content folder using a standardized format.
 
 How to run
-- Install: npm install
-- Dev: npm dev
-- Build: npm build
-- Generate (SSG): npm generate
-- Preview: npm preview
-- Lint: npm lint
-- Typecheck: npm typecheck
+- Install: pnpm install
+- Dev: pnpm dev
+- Build: pnpm build
+- Generate (SSG): pnpm generate
+- Preview: pnpm preview
+- Lint: pnpm lint
+- Typecheck: pnpm typecheck
 
 Repository layout (high level)
 - app/: Nuxt app source (SFCs, layouts, CSS, components)

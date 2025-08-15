@@ -14,6 +14,21 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
+  ui: {
+    theme: {
+      colors: [
+        'primary',
+        'secondary',
+        'tertiary',
+        'info',
+        'success',
+        'warning',
+        'error',
+        'discord'
+      ]
+    }
+  },
+
   devtools: {
     enabled: true
   },
