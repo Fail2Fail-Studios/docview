@@ -55,6 +55,12 @@ const links = computed(() => {
 <template>
   <UPage
     v-if="page"
+    :ui="{
+      root: 'flex flex-col lg:grid lg:grid-cols-12 lg:gap-4',
+      left: 'lg:col-span-3',
+      center: 'lg:col-span-9',
+      right: 'lg:col-span-3 order-first lg:order-last'
+    }"
   >
     <UPageHeader
       :title="page.title"

@@ -32,7 +32,7 @@ async function handleLogout() {
 </script>
 
 <template>
-  <UHeader :ui="{ center: 'flex-1' }">
+  <UHeader :ui="{ center: 'flex-1', container: 'max-w-full' }">
     <UContentSearchButton
       v-if="header?.search && loggedIn"
       :collapsed="false"
