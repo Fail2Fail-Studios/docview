@@ -2,33 +2,12 @@
 import type { Ref } from 'vue'
 import type { ContentNavigationItem } from '@nuxt/content'
 
-// Extended user interface for Discord auth
-interface DiscordUser {
-  id: string
-  email: string
-  name: string
-  avatar?: string
-  discordId: string
-  username: string
-  discriminator: string
-  isDiscordMember: boolean
-}
-
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 const { header } = useAppConfig()
-const { user: rawUser, loggedIn, clear } = useUserSession()
 
-// Type-safe user with Discord properties
-const user = computed(() => rawUser.value as DiscordUser | null)
-
-// Simple logout handler that uses nuxt-auth-utils properly
-async function handleLogout() {
-  console.log('handleLogout called')
-  await clear()
-  await navigateTo('/login')
-}
-
-// Handle dropdown menu selection - not needed with onClick pattern
+// Use composables for auth and menu logic
+const { user, loggedIn, avatarUrl } = useAuth()
+const { menuItems, accountSlotData } = useUserMenu()
 </script>
 
 <template>
@@ -70,28 +49,11 @@ async function handleLogout() {
       <!-- Auth Section -->
       <UDropdownMenu
         v-if="loggedIn"
-        :items="[
-          [
-            {
-              label: user?.name || user?.username || 'User',
-              slot: 'account'
-            }
-          ],
-          [
-            {
-              label: 'Sign Out',
-              icon: 'i-lucide-log-out',
-              onClick: () => {
-                console.log('Sign Out clicked!');
-                handleLogout();
-              }
-            }
-          ]
-        ]"
+        :items="menuItems"
       >
         <UAvatar
-          :src="user?.avatar"
-          :alt="user?.name || user?.username"
+          :src="avatarUrl"
+          :alt="accountSlotData.name"
           size="sm"
           class="cursor-pointer"
         />
@@ -102,7 +64,7 @@ async function handleLogout() {
               {{ item.label }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ user?.email }}
+              {{ accountSlotData.email }}
             </p>
           </div>
         </template>

@@ -1,3 +1,5 @@
+import type { DiscordUser } from '~/types/auth'
+
 export default defineNuxtRouteMiddleware((to) => {
   // Allow public routes
   const publicPaths = ['/login', '/access-denied']
@@ -12,8 +14,9 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/login')
   }
 
-  // Authenticated but not in required Discord guild → access denied
-  if (!(user.value as any).isDiscordMember) {
+  // Type-safe check for Discord membership
+  const discordUser = user.value as DiscordUser
+  if (!discordUser.isDiscordMember) {
     return navigateTo('/login')
   }
 })

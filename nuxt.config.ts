@@ -101,6 +101,19 @@ export default defineNuxtConfig({
     oauthDiscordClientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET,
     requiredDiscordGuildId: process.env.NUXT_REQUIRED_DISCORD_GUILD_ID || '1402498073350901800',
 
+    // Session configuration
+    session: {
+      name: 'nuxt-session',
+      password: process.env.NUXT_SESSION_PASSWORD || '',
+      cookie: {
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production', // Automatic: false in dev, true in production
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7 // 1 week
+      },
+      maxAge: 60 * 60 * 24 * 7 // 1 week session duration
+    },
+
     // Public keys (exposed to client-side)
     public: {
       oauthDiscordClientId: process.env.NUXT_OAUTH_DISCORD_CLIENT_ID,
