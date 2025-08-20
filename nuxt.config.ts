@@ -138,6 +138,9 @@ export default defineNuxtConfig({
         '@': fileURLToPath(new URL('./', import.meta.url)),
         'app': fileURLToPath(new URL('./app', import.meta.url))
       }
+    },
+    server: {
+      allowedHosts: ['docs.fail2.fail']
     }
   }
 })
