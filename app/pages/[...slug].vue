@@ -2,9 +2,7 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 import { findPageHeadline } from '#ui-pro/utils/content'
 
-definePageMeta({
-  layout: 'docs'
-})
+// Layout automatically uses default.vue
 
 const route = useRoute()
 const { toc } = useAppConfig()

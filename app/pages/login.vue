@@ -1,6 +1,5 @@
 <template>
-  <div class="min-h-[calc(100vh-(var(--ui-header-height)*2))] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
+  <div class="max-w-md w-full space-y-8">
       <!-- Header -->
       <div class="text-center">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 418.9 203.75" class="fill-black dark:fill-white pb-12">
@@ -51,14 +50,13 @@
           </div>
         </div>
       </UCard>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // Meta
 definePageMeta({
-  layout: false,
+  layout: 'auth',
   title: 'Login'
 })
 

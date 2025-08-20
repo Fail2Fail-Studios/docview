@@ -15,7 +15,7 @@ export default defineAppConfig({
     }
   },
   seo: {
-    siteName: 'Nuxt Docs Template'
+    siteName: 'Project UNA Docs - F2F Studios'
   },
   header: {
     title: 'Fail 2 Fail Docs',
