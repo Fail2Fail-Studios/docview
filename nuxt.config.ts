@@ -101,6 +101,17 @@ export default defineNuxtConfig({
     oauthDiscordClientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET,
     requiredDiscordGuildId: process.env.NUXT_REQUIRED_DISCORD_GUILD_ID || '1402498073350901800',
 
+    // Document sync configuration
+    syncSourcePath: process.env.NUXT_SYNC_SOURCE_PATH,
+    syncDestinationPath: process.env.NUXT_SYNC_DESTINATION_PATH,
+    syncTimeout: parseInt(process.env.NUXT_SYNC_TIMEOUT || '30000'),
+
+    // Git repository configuration
+    gitRepoPath: process.env.NUXT_GIT_REPO_PATH,
+    gitRepoUrl: process.env.NUXT_GIT_REPO_URL || 'https://github.com/Fail2Fail-Studios/una',
+    gitBranch: process.env.NUXT_GIT_BRANCH || 'main',
+    gitTimeout: parseInt(process.env.NUXT_GIT_TIMEOUT || '60000'),
+
     // Session configuration
     session: {
       name: 'nuxt-session',

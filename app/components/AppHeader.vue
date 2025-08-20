@@ -6,8 +6,24 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 const { header } = useAppConfig()
 
 // Use composables for auth and menu logic
-const { user, loggedIn, avatarUrl } = useAuth()
+const { loggedIn, avatarUrl } = useAuth()
 const { menuItems, accountSlotData } = useUserMenu()
+
+// Full sync functionality (git pull + content sync)
+const {
+  isLoading: isSyncing,
+  performFullSync,
+  lastCheckedFormatted,
+  currentStep
+} = useFullSync()
+
+// App version information
+const { displayVersion, fetchVersionInfo } = useAppVersion()
+
+// Fetch version info on component mount
+onMounted(() => {
+  fetchVersionInfo()
+})
 </script>
 
 <template>
@@ -22,15 +38,24 @@ const { menuItems, accountSlotData } = useUserMenu()
       <NuxtLink
         v-if="header?.logo?.dark || header?.logo?.light"
         :to="header?.to || '/'"
+        class="flex items-center justify-center gap-2"
       >
         <NuxtPicture
-          :src="$colorMode.value === 'dark' ? header?.logo?.dark! : header?.logo?.light!"
+          :src="
+            $colorMode.value === 'dark'
+              ? header?.logo?.dark!
+              : header?.logo?.light!
+          "
           :alt="header?.logo?.alt"
-          class="h-6 w-auto shrink-0"
+          class="h-6 min-h-[31px] w-auto shrink-0 mr-2"
           sizes="sm:64px md:64px lg:64px"
           preset="logo"
           preload
         />
+        <div class="flex flex-col w-auto font-sans">
+          <span class="text-md text-primary-500 dark:text-primary-400">UNA</span>
+          <span class="text-sm text-gray-500 dark:text-gray-500">{{ displayVersion }}</span>
+        </div>
       </NuxtLink>
 
       <span v-else-if="header?.title">
@@ -46,22 +71,37 @@ const { menuItems, accountSlotData } = useUserMenu()
 
       <UColorModeButton v-if="header?.colorMode" />
 
+      <!-- Full Sync Button -->
+      <UButton
+        v-if="loggedIn"
+        :icon="isSyncing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
+        variant="ghost"
+        size="sm"
+        :loading="isSyncing"
+        :disabled="isSyncing"
+        :aria-label="currentStep || 'Update Docs'"
+        :title="
+          currentStep || `Update Docs | Last checked: ${lastCheckedFormatted}`
+        "
+        @click="() => performFullSync()"
+      />
+
       <!-- Auth Section -->
       <UDropdownMenu
         v-if="loggedIn"
         :items="menuItems"
       >
         <UAvatar
-          :src="avatarUrl"
-          :alt="accountSlotData.name"
+          :src="avatarUrl || undefined"
+          :alt="accountSlotData.name || undefined"
           size="sm"
           class="cursor-pointer"
         />
 
-        <template #account="{ item }">
+        <template #account>
           <div class="text-left">
             <p class="font-medium text-gray-900 dark:text-white">
-              {{ item.label }}
+              {{ accountSlotData.name }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ accountSlotData.email }}

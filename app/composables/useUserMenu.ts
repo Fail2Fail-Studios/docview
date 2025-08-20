@@ -34,7 +34,7 @@ export const useUserMenu = () => {
   }))
 
   return {
-    menuItems: readonly(menuItems),
+    menuItems,
     accountSlotData: readonly(accountSlotData)
   }
 }

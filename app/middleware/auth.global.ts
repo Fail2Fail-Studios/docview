@@ -1,4 +1,4 @@
-import type { DiscordUser } from '~/types/auth'
+import type { DiscordUser } from '../../types/auth'
 
 export default defineNuxtRouteMiddleware((to) => {
   // Allow public routes
