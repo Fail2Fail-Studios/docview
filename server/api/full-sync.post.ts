@@ -44,6 +44,8 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
   const repoUrl = config.gitRepoUrl
   const branch = config.gitBranch
   const gitTimeout = config.gitTimeout || 60000
+  const gitUsername = config.gitUsername
+  const gitToken = config.gitToken
 
   // Sync configuration
   const sourcePath = config.syncSourcePath
@@ -109,13 +111,26 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
     console.log(`Repository URL: ${repoUrl}`)
     console.log(`Branch: ${branch}`)
 
-    const gitCommand = `git pull origin ${branch}`
-    console.log(`Executing git command: ${gitCommand}`)
-
-    const gitResult = await execAsync(gitCommand, {
+    // Prepare git command with authentication if available
+    let gitCommand: string
+    const gitExecOptions: any = {
       cwd: repoPath,
       timeout: gitTimeout
-    })
+    }
+
+    if (gitUsername && gitToken) {
+      // Use authenticated URL with Personal Access Token
+      const authenticatedUrl = repoUrl.replace('https://', `https://${gitUsername}:${gitToken}@`)
+      gitCommand = `git pull ${authenticatedUrl} ${branch}`
+      console.log(`Executing authenticated git command: git pull [authenticated-url] ${branch}`)
+    } else {
+      // Fall back to default git pull (relies on local git config)
+      gitCommand = `git pull origin ${branch}`
+      console.log(`Executing git command: ${gitCommand}`)
+      console.warn('Warning: No Git credentials provided. Relying on local git configuration.')
+    }
+
+    const gitResult = await execAsync(gitCommand, gitExecOptions)
 
     gitOutput = gitResult.stdout
     console.log('Git pull completed')

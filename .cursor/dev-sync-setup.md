@@ -22,6 +22,13 @@ NUXT_GIT_REPO_URL=https://github.com/Fail2Fail-Studios/una
 NUXT_GIT_BRANCH=main
 NUXT_GIT_TIMEOUT=60000
 
+# Git Authentication (Required for reliable sync operations)
+# GitHub username or organization name
+NUXT_GIT_USERNAME=your-github-username
+# GitHub Personal Access Token with repo permissions
+# Generate at: https://github.com/settings/tokens
+NUXT_GIT_TOKEN=your-personal-access-token
+
 # Your other existing environment variables...
 NUXT_SESSION_PASSWORD=your-session-password
 NUXT_OAUTH_DISCORD_CLIENT_ID=your-discord-client-id
@@ -47,12 +54,37 @@ D:\Projects\F2F Corp\
         └── subdirectories...
 ```
 
+## Git Authentication Setup
+
+### GitHub Personal Access Token
+For reliable sync operations, you need to configure Git authentication using a Personal Access Token:
+
+1. **Generate a Personal Access Token**:
+   - Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+   - Click "Generate new token (classic)"
+   - Select the following scopes:
+     - `repo` - Full control of private repositories
+     - `public_repo` - Access public repositories
+   - Copy the generated token
+
+2. **Configure Environment Variables**:
+   - Add your GitHub username to `NUXT_GIT_USERNAME`
+   - Add your Personal Access Token to `NUXT_GIT_TOKEN`
+
+3. **Authentication Benefits**:
+   - Works even when local Git user.name/email are not configured
+   - Provides reliable access to private repositories
+   - Bypasses SSH key requirements
+   - Works in CI/CD environments
+
 ## How It Works
 
 ### Two-Step Update Process
 The system now provides a complete two-step workflow for updating documentation:
 
 1. **Git Pull** (🔄 Git icon): Pulls latest content from GitHub repository into f2f-una directory
+   - Uses Personal Access Token authentication when configured
+   - Falls back to local Git configuration if credentials not provided
 2. **Content Sync** (🔄 Refresh icon): Syncs content from f2f-una to f2f-docview for display
 
 **Workflow:**

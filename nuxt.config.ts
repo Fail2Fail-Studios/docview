@@ -111,6 +111,8 @@ export default defineNuxtConfig({
     gitRepoUrl: process.env.NUXT_GIT_REPO_URL || 'https://github.com/Fail2Fail-Studios/una',
     gitBranch: process.env.NUXT_GIT_BRANCH || 'main',
     gitTimeout: parseInt(process.env.NUXT_GIT_TIMEOUT || '60000'),
+    gitUsername: process.env.NUXT_GIT_USERNAME,
+    gitToken: process.env.NUXT_GIT_TOKEN,
 
     // Session configuration
     session: {
