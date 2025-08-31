@@ -23,8 +23,8 @@ const processedNavigation = computed(() => {
   <UPage
     :ui="{
       root: 'flex flex-col lg:grid lg:grid-cols-12 lg:gap-6',
-      left: 'lg:col-span-3',
-      center: 'lg:col-span-9',
+      left: 'lg:col-span-3 max-w-[350px]',
+      center: 'lg:col-span-9 mr-auto',
       right: 'lg:col-span-3 order-first lg:order-last'
     }"
   >
