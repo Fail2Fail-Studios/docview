@@ -2,6 +2,7 @@ import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { GitAuthManager } from '../utils/git-auth'
 
 const execAsync = promisify(exec)
 
@@ -67,6 +68,21 @@ export default defineEventHandler(async (event): Promise<VersionCheckResponse> =
     console.log(`Repository path: ${repoPath}`)
     console.log(`Branch: ${branch}`)
 
+    // Get runtime configuration for credentials
+    const config = useRuntimeConfig()
+    const repoUrl = config.gitRepoUrl
+    const gitUsername = config.gitUsername
+    const gitToken = config.gitToken
+
+    // Create Git authentication manager
+    const credentials = gitUsername && gitToken ? {
+      username: gitUsername,
+      token: gitToken,
+      repoUrl
+    } : undefined
+
+    const gitAuthManager = new GitAuthManager(repoPath, credentials)
+
     // Get local commit hash
     const localResult = await execAsync(`git rev-parse HEAD`, {
       cwd: repoPath,
@@ -74,11 +90,37 @@ export default defineEventHandler(async (event): Promise<VersionCheckResponse> =
     })
     const localCommit = localResult.stdout.trim()
 
-    // Fetch latest changes without merging
-    await execAsync(`git fetch origin ${branch}`, {
-      cwd: repoPath,
-      timeout: 30000
-    })
+    // Use authenticated fetch if credentials are available
+    let fetchSuccess = false
+
+    if (credentials) {
+      try {
+        // Try authenticated fetch
+        const authenticatedUrl = repoUrl.replace('https://', `https://${gitUsername}:${gitToken}@`)
+        await execAsync(`git fetch ${authenticatedUrl} ${branch}`, {
+          cwd: repoPath,
+          timeout: 30000
+        })
+        fetchSuccess = true
+        console.log('Authenticated fetch completed successfully')
+      } catch (authError: any) {
+        console.warn('Authenticated fetch failed, trying fallback:', authError.message)
+      }
+    }
+
+    // Fallback to regular fetch if authenticated fetch failed or no credentials
+    if (!fetchSuccess) {
+      try {
+        await execAsync(`git fetch origin ${branch}`, {
+          cwd: repoPath,
+          timeout: 30000
+        })
+        console.log('Regular fetch completed successfully')
+      } catch (fetchError: any) {
+        console.error('All fetch methods failed:', fetchError.message)
+        throw fetchError
+      }
+    }
 
     // Get remote commit hash
     const remoteResult = await execAsync(`git rev-parse origin/${branch}`, {
@@ -109,13 +151,17 @@ export default defineEventHandler(async (event): Promise<VersionCheckResponse> =
     if (error.code === 'ENOENT') {
       errorMessage = 'Git command not found'
     } else if (error.stderr) {
-      if (error.stderr.includes('Could not resolve host')) {
+      if (error.stderr.includes('Authentication failed') || error.stderr.includes('Permission denied')) {
+        errorMessage = 'Git authentication failed during fetch operation'
+      } else if (error.stderr.includes('Could not resolve host')) {
         errorMessage = 'Network error: Could not connect to git repository'
       } else if (error.stderr.includes('not a git repository')) {
         errorMessage = 'Directory is not a valid git repository'
       } else {
         errorMessage = `Git error: ${error.stderr.trim()}`
       }
+    } else if (error.message) {
+      errorMessage = `Version check error: ${error.message}`
     }
 
     return {
