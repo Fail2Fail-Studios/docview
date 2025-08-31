@@ -141,6 +141,15 @@ However, this won't work for the sync API endpoints and is only useful for manua
 
 ## Production Considerations
 
+### Enhanced Authentication System (v2.0)
+
+The F2F DocView system now includes a robust multi-method authentication system that provides:
+
+- **Multiple Authentication Methods**: Credential helper, URL auth, local config, and SSH
+- **Automatic Fallback**: Tries multiple methods if one fails
+- **Enhanced Diagnostics**: Detailed error reporting and system information
+- **Credential Validation**: Pre-validates tokens before attempting operations
+
 ### Environment Variables
 In production, ensure sensitive environment variables are:
 - Stored securely (not in plain text files)
@@ -148,7 +157,24 @@ In production, ensure sensitive environment variables are:
 - Monitored for unauthorized access
 
 ### Fallback Strategies
-The system includes fallback behavior when credentials aren't provided, but for reliable operations, authentication should always be configured.
+The new system includes multiple fallback authentication methods:
+1. Git credential helper (most secure)
+2. URL authentication (reliable fallback)
+3. Local Git configuration (server-specific)
+4. SSH key authentication (long-term production)
 
 ### Monitoring
 Monitor sync operations for authentication failures and set up alerts for repeated failures that might indicate token expiration or access issues.
+
+### Production Troubleshooting
+
+For comprehensive production troubleshooting, including common issues, recovery procedures, and monitoring strategies, see:
+
+**📖 [Production Git Troubleshooting Guide](./production-git-troubleshooting.md)**
+
+This guide covers:
+- Quick diagnosis using the `/api/git-diagnostics` endpoint
+- Common production authentication failures and solutions
+- Token rotation strategies
+- Emergency recovery procedures
+- Monitoring and alerting setup

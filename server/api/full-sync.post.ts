@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { platform } from 'node:os'
 import type { DiscordUser } from '../../types/auth'
+import { GitAuthManager } from '../utils/git-auth'
 
 const execAsync = promisify(exec)
 
@@ -11,10 +12,12 @@ interface FullSyncResponse {
   success: boolean
   message: string
   timestamp: number
+  method?: string
   commitHash?: string
   gitOutput?: string
   syncOutput?: string
   error?: string
+  diagnostics?: Record<string, any>
 }
 
 export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
@@ -111,34 +114,42 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
     console.log(`Repository URL: ${repoUrl}`)
     console.log(`Branch: ${branch}`)
 
-    // Prepare git command with authentication if available
-    let gitCommand: string
-    const gitExecOptions: any = {
-      cwd: repoPath,
-      timeout: gitTimeout
+    // Create Git authentication manager
+    const credentials = gitUsername && gitToken ? {
+      username: gitUsername,
+      token: gitToken,
+      repoUrl
+    } : undefined
+
+    const gitAuthManager = new GitAuthManager(repoPath, credentials)
+
+    // Get diagnostic information for troubleshooting
+    const diagnostics = await gitAuthManager.getDiagnosticInfo()
+    console.log('Git diagnostics:', diagnostics)
+
+    // Validate credentials if provided
+    if (credentials) {
+      console.log('Validating Git credentials...')
+      const validation = await gitAuthManager.validateCredentials()
+      if (!validation.valid) {
+        console.warn('Git credential validation failed:', validation.error)
+        // Continue anyway - might work with other methods
+      } else {
+        console.log('Git credentials validated successfully')
+      }
     }
 
-    if (gitUsername && gitToken) {
-      // Use authenticated URL with Personal Access Token
-      const authenticatedUrl = repoUrl.replace('https://', `https://${gitUsername}:${gitToken}@`)
-      gitCommand = `git pull ${authenticatedUrl} ${branch}`
-      console.log(`Executing authenticated git command: git pull [authenticated-url] ${branch}`)
-    } else {
-      // Fall back to default git pull (relies on local git config)
-      gitCommand = `git pull origin ${branch}`
-      console.log(`Executing git command: ${gitCommand}`)
-      console.warn('Warning: No Git credentials provided. Relying on local git configuration.')
+    // Attempt authenticated pull using multiple methods
+    console.log('Attempting Git pull with robust authentication...')
+    const authResult = await gitAuthManager.performAuthenticatedPull(branch)
+
+    if (!authResult.success) {
+      throw new Error(authResult.error || 'Git pull failed with unknown error')
     }
 
-    const gitResult = await execAsync(gitCommand, gitExecOptions)
-
-    gitOutput = gitResult.stdout
-    console.log('Git pull completed')
+    gitOutput = authResult.message
+    console.log('Git pull completed using method:', authResult.method)
     console.log('Git output:', gitOutput)
-
-    if (gitResult.stderr) {
-      console.warn('Git warnings:', gitResult.stderr)
-    }
 
     // STEP 2: Content Sync
     console.log('Step 2: Syncing content...')
@@ -202,10 +213,12 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
     return {
       success: true,
       message,
+      method: authResult.method,
       timestamp,
       commitHash,
       gitOutput,
-      syncOutput
+      syncOutput,
+      diagnostics: process.env.NODE_ENV === 'development' ? diagnostics : undefined
     }
 
   } catch (error: any) {
