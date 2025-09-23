@@ -6,27 +6,28 @@ description: Streamlined mavonEditor integration with immediate GitHub submissio
 # F2F DocView - Simplified Markdown Editor Implementation Plan
 
 ## Overview
-Simple file-locking editor using mavonEditor for immediate edits with direct GitHub submission. No complex session management or drafts - edit one file at a time, submit immediately.
+Simple file-locking editor using mavonEditor (Vue 3) for immediate edits with commit/push to the external docs repo (local working copy) followed by content sync into this app. No complex session management or drafts — edit one file at a time, submit immediately.
 
 ## Core Principles
 - **Single file editing**: One file locked per user at a time
-- **Immediate submission**: Changes go directly to GitHub when saved
-- **File locking**: Server-side memory state prevents concurrent edits
-- **Role-based access**: Discord role `doc-edit` (ID: 1406031220772438137) required
-- **No persistence**: All state in server memory, no database needed
+- **Immediate submission**: Save does `git pull --rebase` → write → `git add/commit/push` on the local working copy, then triggers a content sync into this app
+- **File locking**: In-memory locks in a single Node instance prevent concurrent edits
+- **Role-based access**: Discord role `doc-edit` (ID: 1406031220772438137) required, or admin override
+- **No persistence**: All lock state in server memory (no DB)
+- **Media**: Uploads saved to `public/media/` in this app for now (no media sync yet)
 
 ## Architecture Overview
 
 ### Permission System
-1. **Discord Role Check**
-   - Check for `doc-edit` role (ID: 1406031220772438137) during authentication
-   - Cache role information in user session
-   - Middleware protection on all editor endpoints
+1. **Discord Role Check (via Bot Token)**
+   - Use server-side Discord Bot (admin in guild) to verify the logged-in user has the required role ID `1406031220772438137`
+   - User identity comes from the session (Discord OAuth); the server calls Discord Guild Member APIs to check roles
+   - Middleware protection on all editor endpoints, with cached role result per session
 
 2. **Admin Override**
    - Environment variable for admin user IDs
-   - Admins bypass all restrictions
-   - Admin panel for managing file locks
+   - Admins bypass editor restrictions (can force-release locks)
+   - Admin tooling for listing and clearing locks
 
 ### File Locking System
 ```typescript
@@ -47,26 +48,29 @@ const activeFileLocks = new Map<string, FileLock>()
    - User clicks "Edit" button
    - Server checks if file is already locked
    - If available, creates lock with 30-minute timeout
-   - Returns lock token or "file busy" error
+   - Returns lock info or "file busy" error
 
 2. **Lock Management**
    - Automatic cleanup of expired locks
    - Manual lock release on save/cancel
    - Admin override capability
    - Visual indicators of who's editing
+   - Keep-alive endpoint extends lock while editing (sent every ~60s)
+   - Warning popover at 25 minutes; if not extended, editing is disabled and lock expires at 30 minutes
 
 ### Frontend Components
 1. **Edit Mode Toggle**
    - "Edit" button on each documentation page
+   - Only visible to users with required role or admin
    - Check lock status before allowing edit
    - Show "Currently being edited by {user}" if locked
    - Modal editor overlay (not full page)
 
 2. **mavonEditor Integration**
-   - Modal popup with mavonEditor
+   - Modal popup with mavonEditor (v3)
    - Front matter editor section
-   - Direct save to GitHub (no draft state)
-   - Real-time lock refresh to maintain editing session
+   - Save triggers local git commit/push (no draft state)
+   - Real-time lock keep-alive to maintain editing session
 
 3. **Lock Status Indicators**
    - Visual indicators in navigation for locked files
@@ -77,17 +81,19 @@ const activeFileLocks = new Map<string, FileLock>()
 1. **Permission & Lock Management**
    - `GET /api/editor/can-edit/{path}` - Check edit permissions and lock status
    - `POST /api/editor/acquire-lock/{path}` - Acquire file lock
+   - `POST /api/editor/extend-lock/{path}` - Extend lock (keep-alive)
    - `DELETE /api/editor/release-lock/{path}` - Release file lock
    - `GET /api/editor/lock-status` - Get all current locks (admin)
 
 2. **Content Management**
    - `GET /api/editor/content/{path}` - Get raw markdown + front matter
-   - `POST /api/editor/save/{path}` - Save directly to GitHub and release lock
-   - `POST /api/editor/upload-image` - Handle image uploads
+   - `POST /api/editor/save/{path}` - Write to local repo, `git add/commit/push`, then call `/api/sync-content`, release lock
+   - `POST /api/editor/upload-media` - Upload files to this app's `public/media/{yyyy}/{mm}/...` (no repo commit yet)
 
-3. **GitHub Integration**
-   - `POST /api/github/commit-file` - Direct commit to external repo
-   - `GET /api/github/sync-content` - Manual content sync trigger
+3. **Git Integration (existing)**
+   - Use configured local repo at `NUXT_GIT_REPO_PATH`
+   - Save flow runs `git pull --rebase`, `git add`, `git commit --author`, `git push`
+   - After push, call existing `/api/sync-content` to refresh this app's content
 
 ## User Experience Flow
 
@@ -147,21 +153,22 @@ class FileLockManager {
 }
 ```
 
-### GitHub Direct Commit
+### Git Commit & Push (Local Repo)
 ```typescript
-interface GitHubCommit {
-  filePath: string
+interface CommitPayload {
+  filePath: string // relative to repo root (e.g. content/02.game-design/01.index.md)
   content: string
-  message: string
-  author: {
-    name: string
-    email: string
-  }
+  message: string // e.g. "docs: update {relativePath} via editor by {DiscordName}"
+  authorName: string // e.g. Discord display name
+  authorEmail: string // e.g. docs@fail2.fail
 }
 
-async function commitToGitHub(commit: GitHubCommit): Promise<string> {
-  // Direct commit to external docs repo
-  // Return commit SHA or throw error
+async function commitAndPush(payload: CommitPayload): Promise<string> {
+  // 1) git pull --rebase
+  // 2) write file
+  // 3) git add + git commit --author "{authorName} <{authorEmail}>"
+  // 4) git push
+  // 5) return commit SHA
 }
 ```
 
@@ -169,17 +176,22 @@ async function commitToGitHub(commit: GitHubCommit): Promise<string> {
 
 ### Environment Variables
 ```
-# GitHub Integration
-GITHUB_TOKEN=<personal access token>
-GITHUB_DOCS_REPO=<owner/repo-name>
-GITHUB_DOCS_BRANCH=<main/staging>
+# Git local repo (existing)
+NUXT_GIT_REPO_PATH=<absolute path to local working copy>
+NUXT_GIT_REPO_URL=<https repo url>
+NUXT_GIT_BRANCH=main
+NUXT_GIT_USERNAME=<github username>
+NUXT_GIT_TOKEN=<github token with repo scope>
 
-# Discord Integration
-DISCORD_WEBHOOK_URL=<webhook for notifications>
-REQUIRED_DISCORD_ROLE_ID=1406031220772438137
+# Discord (role enforcement)
+NUXT_DISCORD_BOT_TOKEN=<discord bot token with guild access>
+NUXT_REQUIRED_DISCORD_GUILD_ID=1402498073350901800
+NUXT_REQUIRED_DISCORD_ROLE_ID=1406031220772438137
+NUXT_ADMIN_USER_IDS=<discord_id1,discord_id2>
 
-# Admin Users (comma separated Discord IDs)
-ADMIN_USER_IDS=<discord_id1,discord_id2>
+# Content sync (existing)
+NUXT_SYNC_SOURCE_PATH=<repo>/content
+NUXT_SYNC_DESTINATION_PATH=<app>/content
 
 # Lock Settings
 FILE_LOCK_TIMEOUT_MS=1800000
@@ -193,7 +205,7 @@ editor: {
   enabled: true,
   lockTimeoutMinutes: 30,
   lockWarningMinutes: 25,
-  commitMessageTemplate: "docs: update {fileName} via editor",
+  commitMessageTemplate: "docs: update {relativePath} via editor by {DiscordName}",
   autoSyncAfterCommit: true
 }
 ```
@@ -201,29 +213,28 @@ editor: {
 ## Component Implementation Plan
 
 ### 1. Nuxt Plugin Setup
-- `app/plugins/mavon-editor.client.ts` - Client-side mavonEditor registration
-- Update `nuxt.config.ts` with plugin configuration
-- Add CSS imports for mavonEditor styling
+- `app/plugins/mavon-editor.client.ts` - Client-side mavonEditor (v3) registration
+- Include mavonEditor CSS in the plugin
+- No SSR usage; editor only renders in modal on client
 
 ### 2. Server-Side Lock Manager
-- `server/utils/FileLockManager.ts` - Core lock management class
+- `server/utils/FileLockManager.ts` - Core lock management class (in-memory)
 - `server/api/editor/` - API endpoints for editor functionality
-- Middleware for permission checking and lock validation
+- Middleware for permission checking and lock validation (Discord role via bot)
 
 ### 3. Frontend Components
-- `app/components/EditorModal.vue` - Main editing interface
-- `app/components/EditorButton.vue` - Edit button for pages
+- `app/components/EditorModal.vue` - Main editing interface (mavonEditor, front matter, Save/Cancel, timeout popover)
+- `app/components/EditorButton.vue` - Edit button for pages (role-gated)
 - `app/components/LockIndicator.vue` - Visual lock status display
 
 ### 4. Page Integration
-- Modify `app/pages/[...slug].vue` to include edit button
+- Modify `app/pages/[...slug].vue` to include role-gated edit button
 - Add lock status indicators to navigation
-- Handle modal state and content refresh
+- Handle modal state and content refresh after save
 
-### 5. Store Management
-- `app/stores/editor.ts` - Pinia store for editor state
-- Track current editing status, lock information
-- Handle modal visibility and content state
+### 5. State Management (Composable)
+- `app/composables/useEditorState.ts` - Composable for editor state (modal visibility, lock info, file content)
+- Uses `useState`/injection, no Pinia
 
 ## Security Considerations
 1. **Authentication Required**
@@ -239,27 +250,26 @@ editor: {
 3. **Rate Limiting**
    - Prevent rapid successive commits
    - Lock acquisition rate limiting
-   - Image upload restrictions
+   - Media upload restrictions (500 MB limit; images/audio/video)
 
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure
-1. Install and configure mavonEditor
-2. Create file lock manager system
-3. Implement basic API endpoints
-4. Add Discord role checking
+1. Install and configure mavonEditor (v3)
+2. Create file lock manager system (in-memory)
+3. Implement basic API endpoints (locks, content read, save, upload-media, keep-alive)
+4. Add Discord role checking via Bot
 
 ### Phase 2: Frontend Integration
-1. Create editor modal component
-2. Add edit buttons to pages
+1. Create editor modal component with timeout popover
+2. Add role-gated edit buttons to pages
 3. Implement lock status indicators
-4. Connect frontend to backend APIs
+4. Connect frontend to backend APIs and keep-alive
 
-### Phase 3: GitHub Integration
-1. Direct commit functionality
-2. Content synchronization
-3. Discord notifications
-4. Error handling and recovery
+### Phase 3: Commit & Sync
+1. Local repo commit/push functionality
+2. Trigger content synchronization after save
+3. Error handling and recovery
 
 ### Phase 4: Polish & Testing
 1. User experience refinements
@@ -270,7 +280,7 @@ editor: {
 ## Success Criteria
 - Users with correct role can edit any unlocked file
 - Only one user can edit a file at a time
-- Changes commit directly to GitHub immediately
+- Changes commit and push to the external docs repo immediately; app content syncs after save
 - Clear visual feedback about edit status
 - Simple, intuitive editing experience
 - No complex state management or persistence
