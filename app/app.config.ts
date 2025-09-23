@@ -4,9 +4,7 @@ export default defineAppConfig({
       primary: 'red',
       neutral: 'neutral',
       discord: 'indigo'
-    }
-  },
-  uiPro: {
+    },
     footer: {
       slots: {
         root: 'border-t border-default',

@@ -8,7 +8,6 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/content',
     '@nuxt/ui',
-    '@nuxt/ui-pro',
     'nuxt-og-image',
     'nuxt-auth-utils'
   ],
