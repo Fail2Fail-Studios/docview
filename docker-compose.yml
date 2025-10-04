@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: f2f-docview-dev
+    command: pnpm dev --host 0.0.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      # Pass through environment variables needed by the app
+      - NUXT_OAUTH_DISCORD_CLIENT_ID
+      - NUXT_OAUTH_DISCORD_CLIENT_SECRET
+      - NUXT_REQUIRED_DISCORD_GUILD_ID
+      - NUXT_SESSION_PASSWORD
+      - NUXT_AUTH_BASE_URL=http://localhost:3000
+      - NUXT_SYNC_SOURCE_PATH=/usr/src/una/content
+      - NUXT_SYNC_DESTINATION_PATH=/usr/src/app/content
+      - NUXT_GIT_REPO_PATH
+      - NUXT_GIT_REPO_URL
+      - NUXT_GIT_BRANCH
+      - NUXT_GIT_USERNAME
+      - NUXT_GIT_TOKEN
+    volumes:
+      - .:/usr/src/app:cached
+      - node_modules:/usr/src/app/node_modules
+      # Mount UNA content into the app's content folder for live docs
+      - "C:\\Projects\\una\\content:/usr/src/app/content:cached"
+    # Improves file watch performance on Windows/macOS
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /usr/src/app
+          ignore:
+            - node_modules/
+            - .git/
+            - .next/
+            - .nuxt/
+            - .output/
+
+volumes:
+  node_modules:
+
+

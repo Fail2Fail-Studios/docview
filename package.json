@@ -9,7 +9,14 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "compose:up": "docker compose up --build -d",
+    "compose:down": "docker compose down",
+    "compose:logs": "docker compose logs -f",
+    "compose:exec": "docker compose exec app sh",
+    "compose:build": "docker compose build",
+    "compose:restart": "docker compose restart",
+    "compose:stop": "docker compose stop"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.57",
@@ -21,7 +28,8 @@
     "nuxt": "^4.0.0",
     "nuxt-auth-utils": "^0.5.23",
     "nuxt-og-image": "^5.1.9",
-    "sass": "^1.90.0"
+    "sass": "^1.90.0",
+    "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.5.2",
@@ -35,6 +43,14 @@
   "pnpm": {
     "ignoredBuiltDependencies": [
       "vue-demi"
+    ],
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@tailwindcss/oxide",
+      "better-sqlite3",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
     ]
   },
   "packageManager": "pnpm@10.13.1"

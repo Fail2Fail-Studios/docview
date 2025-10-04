@@ -26,6 +26,8 @@ logs
 # VSC
 .history
 
+.pnpm-store
+
 una/
 content/
 .content_original/
