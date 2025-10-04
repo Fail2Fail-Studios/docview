@@ -9,6 +9,7 @@ services:
     command: pnpm dev --host 0.0.0.0
     ports:
       - "3000:3000"
+      - "4000:4000"
     environment:
       # Pass through environment variables needed by the app
       - NUXT_OAUTH_DISCORD_CLIENT_ID
@@ -18,7 +19,7 @@ services:
       - NUXT_AUTH_BASE_URL=http://localhost:3000
       - NUXT_SYNC_SOURCE_PATH=/usr/src/una/content
       - NUXT_SYNC_DESTINATION_PATH=/usr/src/app/content
-      - NUXT_GIT_REPO_PATH
+      - NUXT_GIT_REPO_PATH=/usr/src/una
       - NUXT_GIT_REPO_URL
       - NUXT_GIT_BRANCH
       - NUXT_GIT_USERNAME
@@ -28,6 +29,8 @@ services:
       - node_modules:/usr/src/app/node_modules
       # Mount UNA content into the app's content folder for live docs
       - "C:\\Projects\\una\\content:/usr/src/app/content:cached"
+      # Mount UNA repo root to satisfy git-based version reads
+      - "C:\\Projects\\una:/usr/src/una:cached"
     # Improves file watch performance on Windows/macOS
     develop:
       watch:
