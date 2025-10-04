@@ -80,7 +80,7 @@ onMounted(() => {
       />
 
       <!-- Editor Toggle Button -->
-      <!-- <EditorToggleButton v-if="loggedIn" /> -->
+      <EditorToggleButton v-if="loggedIn" />
 
       <!-- Auth Section -->
       <UDropdownMenu
