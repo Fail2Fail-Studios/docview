@@ -144,6 +144,13 @@ export default defineNuxtConfig({
     },
     server: {
       allowedHosts: ['docs.fail2.fail']
+    },
+    optimizeDeps: {
+      include: ['@toast-ui/editor', '@toast-ui/vue-editor']
     }
+  },
+
+  build: {
+    transpile: ['@toast-ui/editor', '@toast-ui/vue-editor']
   }
 })

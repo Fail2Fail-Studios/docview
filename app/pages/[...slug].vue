@@ -51,6 +51,21 @@ const links = computed(() => {
 
 // TOC collapse state
 const tocCollapsed = ref(false)
+
+// Editor state
+const { state: editorState } = useEditor()
+
+// Reactive title and description for editor mode
+const editableTitle = ref(page.value.title || '')
+const editableDescription = ref(page.value.description || '')
+const editableBody = ref('')
+
+// Watch for changes from the editor state
+watch(() => editorState.value.currentContent, (content) => {
+  editableTitle.value = content.title
+  editableDescription.value = content.description
+  editableBody.value = content.body
+}, { deep: true })
 </script>
 
 <template>
@@ -63,26 +78,50 @@ const tocCollapsed = ref(false)
       right: 'lg:col-span-3 order-first lg:order-last'
     }"
   >
-    <UPageHeader
-      :title="page.title"
-      :description="page.description"
-      :links="page.links"
-      :headline="headline"
-    />
+    <!-- Editor Mode -->
+    <template v-if="editorState.isEnabled">
+      <div class="space-y-4 px-4 py-6">
+        <EditorEditableTitle
+          v-model="editableTitle"
+          :editor-enabled="editorState.isEnabled"
+        />
+        <EditorEditableDescription
+          v-model="editableDescription"
+          :editor-enabled="editorState.isEnabled"
+        />
+        <div class="mt-6">
+          <ClientOnly>
+            <EditorContentEditor
+              v-model="editableBody"
+            />
+          </ClientOnly>
+        </div>
+      </div>
+    </template>
 
-    <UPageBody id="main-content">
-      <ContentRenderer
-        v-if="page"
-        :value="page"
+    <!-- Normal View Mode -->
+    <template v-else>
+      <UPageHeader
+        :title="page.title"
+        :description="page.description"
+        :links="page.links"
+        :headline="headline"
       />
 
-      <USeparator v-if="surround?.length" />
+      <UPageBody id="main-content">
+        <ContentRenderer
+          v-if="page"
+          :value="page"
+        />
 
-      <UContentSurround :surround="surround" />
-    </UPageBody>
+        <USeparator v-if="surround?.length" />
+
+        <UContentSurround :surround="surround" />
+      </UPageBody>
+    </template>
 
     <template
-      v-if="page?.body?.toc?.links?.length && !tocCollapsed"
+      v-if="page?.body?.toc?.links?.length && !tocCollapsed && !editorState.isEnabled"
       #right
     >
       <div class="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto overflow-x-hidden">
@@ -126,7 +165,7 @@ const tocCollapsed = ref(false)
     </template>
 
     <!-- TOC Expand Toggle (when collapsed) -->
-    <template v-if="tocCollapsed && page?.body?.toc?.links?.length" #right>
+    <template v-if="tocCollapsed && page?.body?.toc?.links?.length && !editorState.isEnabled" #right>
       <div class="sticky top-16">
         <UButton
           icon="i-lucide-chevron-left"

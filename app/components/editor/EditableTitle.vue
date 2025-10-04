@@ -49,7 +49,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 </script>
 
 <template>
-  <div class="editable-title-container">
+  <div class="mb-4">
     <div
       v-if="!isEditing"
       class="flex items-center gap-2 group"
@@ -83,10 +83,4 @@ const handleKeydown = (e: KeyboardEvent) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.editable-title-container {
-  @apply mb-4;
-}
-</style>
 

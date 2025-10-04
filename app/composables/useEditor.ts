@@ -82,6 +82,9 @@ export const useEditor = () => {
       color: 'green',
       icon: 'i-lucide-check'
     })
+
+    // Exit editor mode after saving
+    state.value.isEnabled = false
   }
 
   const disableEditor = () => {
