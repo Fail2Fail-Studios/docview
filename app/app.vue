@@ -28,16 +28,16 @@ provide('navigation', navigation)
 </script>
 
 <template>
-  <UApp>
+  <div>
     <NuxtLoadingIndicator />
 
     <AppHeader />
 
-    <UMain>
+    <main>
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>
-    </UMain>
+    </main>
 
     <AppFooter />
 
@@ -47,5 +47,6 @@ provide('navigation', navigation)
         :navigation="navigation"
       />
     </ClientOnly>
-  </UApp>
+  </div>
+
 </template>

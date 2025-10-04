@@ -24,6 +24,8 @@
     "@nuxt/content": "^3.6.3",
     "@nuxt/image": "^1.10.0",
     "@nuxt/ui": "^4.0.0",
+    "@toast-ui/editor": "^3.2.2",
+    "@toast-ui/vue-editor": "^3.2.3",
     "better-sqlite3": "^12.2.0",
     "nuxt": "^4.0.0",
     "nuxt-auth-utils": "^0.5.23",
@@ -53,5 +55,5 @@
       "unrs-resolver"
     ]
   },
-  "packageManager": "pnpm@10.13.1"
+  "packageManager": "pnpm@10.18.0"
 }

@@ -40,17 +40,10 @@ onMounted(() => {
         :to="header?.to || '/'"
         class="flex items-center justify-center gap-2"
       >
-        <NuxtPicture
-          :src="
-            $colorMode.value === 'dark'
-              ? header?.logo?.dark!
-              : header?.logo?.light!
-          "
-          :alt="header?.logo?.alt"
+        <img
+          :src="$colorMode.value === 'dark' ? header?.logo?.dark! : header?.logo?.light!"
+          :alt="header?.logo?.alt || 'Logo'"
           class="h-6 min-h-[31px] w-auto shrink-0 mr-2"
-          sizes="sm:64px md:64px lg:64px"
-          preset="logo"
-          preload
         />
         <div class="flex flex-col w-auto font-sans">
           <span class="text-md text-primary-500 dark:text-primary-400">UNA</span>
@@ -85,6 +78,9 @@ onMounted(() => {
         "
         @click="() => performFullSync()"
       />
+
+      <!-- Editor Toggle Button -->
+      <!-- <EditorToggleButton v-if="loggedIn" /> -->
 
       <!-- Auth Section -->
       <UDropdownMenu

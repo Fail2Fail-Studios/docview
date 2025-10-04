@@ -34,6 +34,8 @@ export default defineNuxtConfig({
   css: ['app/assets/css/main.css'],
 
   image: {
+    // Disable IPX/sharp during dev to avoid native binding errors and 500s
+    provider: 'none',
     presets: {
       logo: {
         modifiers: {
