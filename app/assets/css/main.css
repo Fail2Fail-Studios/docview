@@ -4,7 +4,7 @@
 @source "../../../content/**/*";
 
 @theme static {
-  --font-sans: 'Mozilla Text', sans-serif;
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   --color-green-50: #EFFDF5;
   --color-green-100: #D9FBE8;

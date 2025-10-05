@@ -13,7 +13,8 @@ if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
 }
 
-const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
+// Make surround lazy - it's nice-to-have, not critical for initial render
+const { data: surround } = useLazyAsyncData(`${route.path}-surround`, () => {
   return queryCollectionItemSurroundings('docs', route.path, {
     fields: ['description']
   })

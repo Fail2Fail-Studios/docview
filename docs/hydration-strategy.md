@@ -82,6 +82,17 @@ Use when: Component has no SSR value and always has hydration issues
 </ClientOnly>
 ```
 
+**With fallback to prevent layout shift:**
+```vue
+<ClientOnly>
+  <DynamicComponent />
+  <template #fallback>
+    <!-- Reserve space with invisible placeholders -->
+    <div class="size-8" /> <!-- Match component size -->
+  </template>
+</ClientOnly>
+```
+
 ### Pattern 2: Client-Only with Fallback
 Use when: You want to show placeholder during SSR
 
@@ -191,6 +202,29 @@ Use when: Content should be in DOM for SEO but hidden in certain states
 **Avoid:** Trying to make everything SSR-compatible with complex workarounds
 **Prefer:** Accept that some UI is client-only and embrace `ClientOnly` component
 
+### Lesson 5: Prevent Layout Shift with ClientOnly
+**Problem:** ClientOnly components cause layout shift when they load
+**Solution:** Always provide a `#fallback` template with invisible placeholders that match the real component's size
+
+**Example:**
+```vue
+<ClientOnly>
+  <!-- Real buttons: 3 buttons × 32px each + gaps -->
+  <UButton size="sm" />
+  <UButton size="sm" />
+  <UAvatar size="sm" />
+  
+  <template #fallback>
+    <!-- Invisible placeholders: same sizes -->
+    <div class="flex items-center gap-1.5">
+      <div class="size-8" />
+      <div class="size-8" />
+      <div class="size-8" />
+    </div>
+  </template>
+</ClientOnly>
+```
+
 ---
 
 ## Best Practices
@@ -202,6 +236,15 @@ Use when: Content should be in DOM for SEO but hidden in certain states
 - Keep SEO-critical content (title, description, body) in SSR
 - Use `v-show` instead of `v-if` when toggling SSR'd content
 - Provide sensible default values that match on server and client
+- **Always add fallback placeholders to `ClientOnly` to prevent layout shift**
+- Use opacity transitions instead of `v-if` to prevent layout shift:
+  ```vue
+  <!-- Good: No layout shift -->
+  <span :class="isLoaded ? 'opacity-100' : 'opacity-0'">{{ content }}</span>
+  
+  <!-- Bad: Layout shifts when content appears -->
+  <span v-if="isLoaded">{{ content }}</span>
+  ```
 
 ### ❌ DON'T:
 - Don't use `Date.now()` or relative time calculations in SSR
@@ -251,13 +294,36 @@ It's NOT okay for:
 
 ---
 
+## Color Mode Configuration
+
+### Setting Dark Mode as Default
+
+To prevent logo/UI flash issues during hydration, configure color mode in `nuxt.config.ts`:
+
+```typescript
+colorMode: {
+  preference: 'dark', // Default to dark mode
+  fallback: 'dark',   // Fallback to dark if preference can't be determined
+  classSuffix: ''     // Use class="dark" instead of class="dark-mode"
+}
+```
+
+**Why this matters:**
+- Prevents light mode flash on initial load
+- Ensures logo and theme match immediately
+- Better UX for users who prefer dark mode
+- No hydration mismatch from color mode state
+
+---
+
 ## Related Files
 
-- `app/components/AppHeader.vue` - Header with dynamic timestamps
+- `app/components/AppHeader.vue` - Header with dynamic timestamps and version fade-in
 - `app/pages/[...slug].vue` - Page with editor toggle
 - `app/composables/useSyncState.ts` - Timestamp formatting logic
 - `app/plugins/startup-sync.client.ts` - Client-only initialization
 - `app/composables/useAppVersion.ts` - Version fetching
+- `nuxt.config.ts` - Color mode and performance configuration
 
 ---
 

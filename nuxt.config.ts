@@ -99,6 +99,12 @@ export default defineNuxtConfig({
     provider: 'iconify'
   },
 
+  colorMode: {
+    preference: 'dark', // Default to dark mode
+    fallback: 'dark', // Fallback to dark if preference can't be determined
+    classSuffix: '' // Use class="dark" instead of class="dark-mode"
+  },
+
   runtimeConfig: {
     // Private keys (only available on server-side)
     oauthDiscordClientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET,

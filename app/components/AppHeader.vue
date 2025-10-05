@@ -18,11 +18,17 @@ const {
 } = useFullSync()
 
 // App version information
-const { displayVersion, fetchVersionInfo } = useAppVersion()
+const { displayVersion, fetchVersionInfo, versionInfo, isLoading: isVersionLoading } = useAppVersion()
 
-// Fetch version info on component mount
+// Track if version has been fetched successfully
+const showVersion = computed(() => versionInfo.value.lastUpdated !== null && !isVersionLoading.value)
+
+// Defer version fetch to avoid blocking interactivity
 onMounted(() => {
-  fetchVersionInfo()
+  // Wait for user interactions to settle before fetching
+  setTimeout(() => {
+    fetchVersionInfo()
+  }, 1000)
 })
 </script>
 
@@ -49,8 +55,13 @@ onMounted(() => {
           class="h-6 min-h-[31px] w-auto shrink-0 mr-2"
         />
         <div class="flex flex-col w-auto font-sans">
-          <span class="text-md text-primary-500 dark:text-primary-400">UNA</span>
-          <span class="text-sm text-gray-500 dark:text-gray-500">{{ displayVersion }}</span>
+          <span class="text-xl font-bold text-primary-500 dark:text-primary-400">UNA</span>
+          <span
+            class="text-sm text-gray-500 dark:text-gray-500 transition-opacity duration-500"
+            :class="showVersion ? 'opacity-100' : 'opacity-0'"
+          >
+            {{ displayVersion }}
+          </span>
         </div>
       </NuxtLink>
 
@@ -110,6 +121,18 @@ onMounted(() => {
             </div>
           </template>
         </UDropdownMenu>
+
+        <!-- Fallback: Reserve space for auth buttons to prevent layout shift -->
+        <template #fallback>
+          <div class="flex items-center gap-1.5">
+            <!-- Placeholder for sync button (8x8 = 32px) -->
+            <div class="size-8" />
+            <!-- Placeholder for editor button (8x8 = 32px) -->
+            <div class="size-8" />
+            <!-- Placeholder for avatar (8x8 = 32px) -->
+            <div class="size-8" />
+          </div>
+        </template>
       </ClientOnly>
     </template>
 

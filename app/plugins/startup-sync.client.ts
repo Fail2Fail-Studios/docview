@@ -75,6 +75,7 @@ export default defineNuxtPlugin(async () => {
     updateLastCheckTime(Date.now())
   }
 
-  // Check for updates after a short delay to allow app to fully load
-  setTimeout(autoSyncIfNeeded, 2000)
+  // Check for updates after app is fully interactive (increased from 2s to 5s)
+  // This prevents blocking the UI during initial render
+  setTimeout(autoSyncIfNeeded, 5000)
 })
