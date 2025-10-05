@@ -255,10 +255,43 @@ editor: {
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure
-1. Install and configure mavonEditor (v3)
-2. Create file lock manager system (in-memory)
-3. Implement basic API endpoints (locks, content read, save, upload-media, keep-alive)
-4. Add Discord role checking via Bot
+**STATUS: 40% Complete - Frontend done, backend infrastructure needed**
+
+**✅ Completed:**
+1. ✅ Editor library installed - **Toast UI Editor** (v3.2.2) instead of mavonEditor
+   - Better Vue 3 support and more feature-rich
+   - Configured with dark theme matching Nuxt UI
+   - Tab-based preview mode
+2. ✅ Frontend components built:
+   - `app/components/editor/ContentEditor.client.vue` - Full markdown editor
+   - `app/components/editor/EditableTitle.vue` - Inline title editing
+   - `app/components/editor/EditableDescription.vue` - Inline description editing
+   - `app/components/editor/EditorToggleButton.vue` - Smart edit/save toggle
+3. ✅ Editor state management - `app/composables/useEditor.ts`
+   - State tracking (enabled, original, current, dirty)
+   - Update handlers for title, description, body
+   - Save/cancel with dirty checking
+4. ✅ Editor plugin - `app/plugins/toast-ui-editor.client.ts`
+5. ✅ Basic Discord authentication - Guild membership checking in `server/api/auth/[...].ts`
+
+**🔄 In Progress / Next Steps:**
+1. ❌ Create file lock manager system (in-memory) - `server/utils/FileLockManager.ts`
+2. ❌ Implement editor API endpoints - `server/api/editor/`:
+   - `can-edit/{path}.get.ts` - Check permissions and lock status
+   - `acquire-lock/{path}.post.ts` - Acquire file lock
+   - `extend-lock/{path}.post.ts` - Keep-alive for lock
+   - `release-lock/{path}.delete.ts` - Release lock
+   - `content/{path}.get.ts` - Fetch raw markdown from git repo
+   - `save/{path}.post.ts` - Commit, push, sync
+   - `upload-media.post.ts` - Media uploads
+   - `lock-status.get.ts` - Admin: view all locks
+3. ❌ Enhance Discord authentication with ROLE checking:
+   - Extend OAuth to fetch guild member details with roles
+   - Add role ID (1406031220772438137) to session
+   - Update `types/auth.ts` to include roles
+   - Create editor permission helper utilities
+4. ❌ Wire up real content fetching (from git repo raw files)
+5. ❌ Add lock timeout warnings and keep-alive to frontend
 
 ### Phase 2: Frontend Integration
 1. Create editor modal component with timeout popover
