@@ -7,6 +7,9 @@ export interface DiscordUser {
   username: string
   discriminator: string
   isDiscordMember: boolean
+  roles?: string[] // Discord role IDs from the guild
+  isDocEditor?: boolean // Has doc-edit role
+  isAdmin?: boolean // Is admin (from config)
 }
 
 export interface AuthSession {

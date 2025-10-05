@@ -78,9 +78,35 @@ watch(() => editorState.value.currentContent, (content) => {
       right: 'lg:col-span-3 order-first lg:order-last'
     }"
   >
-    <!-- Editor Mode -->
-    <template v-if="editorState.isEnabled">
-      <div class="space-y-4 px-4 py-6">
+    <!-- Always render normal view for SSR, then show editor mode on client if enabled -->
+    <UPageHeader
+      v-show="!editorState.isEnabled"
+      :title="page.title"
+      :description="page.description"
+      :links="page.links"
+      :headline="headline"
+    />
+
+    <UPageBody
+      v-show="!editorState.isEnabled"
+      id="main-content"
+    >
+      <ContentRenderer
+        v-if="page"
+        :value="page"
+      />
+
+      <USeparator v-if="surround?.length" />
+
+      <UContentSurround :surround="surround" />
+    </UPageBody>
+
+    <!-- Editor Mode - Client Only -->
+    <ClientOnly>
+      <div
+        v-if="editorState.isEnabled"
+        class="space-y-4 px-4 py-6"
+      >
         <EditorEditableTitle
           v-model="editableTitle"
           :editor-enabled="editorState.isEnabled"
@@ -90,35 +116,12 @@ watch(() => editorState.value.currentContent, (content) => {
           :editor-enabled="editorState.isEnabled"
         />
         <div class="mt-6">
-          <ClientOnly>
-            <EditorContentEditor
-              v-model="editableBody"
-            />
-          </ClientOnly>
+          <EditorContentEditor
+            v-model="editableBody"
+          />
         </div>
       </div>
-    </template>
-
-    <!-- Normal View Mode -->
-    <template v-else>
-      <UPageHeader
-        :title="page.title"
-        :description="page.description"
-        :links="page.links"
-        :headline="headline"
-      />
-
-      <UPageBody id="main-content">
-        <ContentRenderer
-          v-if="page"
-          :value="page"
-        />
-
-        <USeparator v-if="surround?.length" />
-
-        <UContentSurround :surround="surround" />
-      </UPageBody>
-    </template>
+    </ClientOnly>
 
     <template
       v-if="page?.body?.toc?.links?.length && !tocCollapsed && !editorState.isEnabled"

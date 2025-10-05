@@ -28,11 +28,14 @@ onMounted(() => {
 
 <template>
   <UHeader :ui="{ center: 'flex-1', container: 'max-w-full' }">
-    <UContentSearchButton
-      v-if="header?.search && loggedIn"
-      :collapsed="false"
-      class="w-full"
-    />
+    <!-- Search in center - client only to avoid hydration mismatch with auth state -->
+    <ClientOnly>
+      <UContentSearchButton
+        v-if="header?.search && loggedIn"
+        :collapsed="false"
+        class="w-full"
+      />
+    </ClientOnly>
 
     <template #title>
       <NuxtLink
@@ -64,47 +67,50 @@ onMounted(() => {
 
       <UColorModeButton v-if="header?.colorMode" />
 
-      <!-- Full Sync Button -->
-      <UButton
-        v-if="loggedIn"
-        :icon="isSyncing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
-        variant="ghost"
-        size="sm"
-        :loading="isSyncing"
-        :disabled="isSyncing"
-        :aria-label="currentStep || 'Update Docs'"
-        :title="
-          currentStep || `Update Docs | Last checked: ${lastCheckedFormatted}`
-        "
-        @click="() => performFullSync()"
-      />
-
-      <!-- Editor Toggle Button -->
-      <EditorToggleButton v-if="loggedIn" />
-
-      <!-- Auth Section -->
-      <UDropdownMenu
-        v-if="loggedIn"
-        :items="menuItems"
-      >
-        <UAvatar
-          :src="avatarUrl || undefined"
-          :alt="accountSlotData.name || undefined"
+      <!-- Auth-dependent UI - client only to avoid hydration mismatch -->
+      <ClientOnly>
+        <!-- Full Sync Button -->
+        <UButton
+          v-if="loggedIn"
+          :icon="isSyncing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
+          variant="ghost"
           size="sm"
-          class="cursor-pointer"
+          :loading="isSyncing"
+          :disabled="isSyncing"
+          :aria-label="currentStep || 'Update Docs'"
+          :title="
+            currentStep || `Update Docs | Last checked: ${lastCheckedFormatted}`
+          "
+          @click="() => performFullSync()"
         />
 
-        <template #account>
-          <div class="text-left">
-            <p class="font-medium text-gray-900 dark:text-white">
-              {{ accountSlotData.name }}
-            </p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ accountSlotData.email }}
-            </p>
-          </div>
-        </template>
-      </UDropdownMenu>
+        <!-- Editor Toggle Button -->
+        <EditorToggleButton v-if="loggedIn" />
+
+        <!-- Auth Section -->
+        <UDropdownMenu
+          v-if="loggedIn"
+          :items="menuItems"
+        >
+          <UAvatar
+            :src="avatarUrl || undefined"
+            :alt="accountSlotData.name || undefined"
+            size="sm"
+            class="cursor-pointer"
+          />
+
+          <template #account>
+            <div class="text-left">
+              <p class="font-medium text-gray-900 dark:text-white">
+                {{ accountSlotData.name }}
+              </p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ accountSlotData.email }}
+              </p>
+            </div>
+          </template>
+        </UDropdownMenu>
+      </ClientOnly>
     </template>
 
     <template #body>
