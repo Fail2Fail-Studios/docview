@@ -54,7 +54,9 @@ export default defineNuxtConfig({
           searchDepth: 1
         }
       }
-    }
+    },
+    // Disable WebSocket in development (doesn't work well in Docker)
+    watch: false
   },
 
   compatibilityDate: '2024-07-11',
@@ -101,6 +103,9 @@ export default defineNuxtConfig({
     // Private keys (only available on server-side)
     oauthDiscordClientSecret: process.env.NUXT_OAUTH_DISCORD_CLIENT_SECRET,
     requiredDiscordGuildId: process.env.NUXT_REQUIRED_DISCORD_GUILD_ID || '1402498073350901800',
+    discordBotToken: process.env.NUXT_DISCORD_BOT_TOKEN,
+    discordEditorRoleId: process.env.NUXT_DISCORD_EDITOR_ROLE_ID || '1406031220772438137',
+    adminUserIds: process.env.NUXT_ADMIN_USER_IDS?.split(',').map(id => id.trim()) || [],
 
     // Document sync configuration
     syncSourcePath: process.env.NUXT_SYNC_SOURCE_PATH,
@@ -143,10 +148,19 @@ export default defineNuxtConfig({
       }
     },
     server: {
-      allowedHosts: ['docs.fail2.fail']
+      allowedHosts: ['docs.fail2.fail'],
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost'
+        // Use the same port as the dev server (3000)
+      },
+      watch: {
+        usePolling: true // Better compatibility with Docker volumes
+      }
     },
     optimizeDeps: {
-      include: ['@toast-ui/editor', '@toast-ui/vue-editor']
+      include: ['@toast-ui/editor', '@toast-ui/vue-editor'],
+      timeout: 60000 // Increase timeout to 60 seconds for Docker builds
     }
   },
 
