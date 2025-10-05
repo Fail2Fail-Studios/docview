@@ -254,8 +254,16 @@ editor: {
 
 ## Implementation Phases
 
+**Overall Status: Phases 1-3 Complete ✅ | Ready for Production Testing**
+
+The simplified markdown editor is now **fully functional** with all core features implemented:
+- ✅ **Backend Infrastructure**: File locking, permissions, API endpoints
+- ✅ **Frontend Integration**: Editor UI, lock management, real-time keep-alive
+- ✅ **Git Workflow**: Commit, push, and content sync on save
+- 🔄 **Phase 4 (Next)**: Polish, admin tools, and comprehensive testing
+
 ### Phase 1: Core Infrastructure
-**STATUS: 40% Complete - Frontend done, backend infrastructure needed**
+**STATUS: ✅ 100% Complete - All backend and frontend infrastructure ready**
 
 **✅ Completed:**
 1. ✅ Editor library installed - **Toast UI Editor** (v3.2.2) instead of mavonEditor
@@ -272,37 +280,82 @@ editor: {
    - Update handlers for title, description, body
    - Save/cancel with dirty checking
 4. ✅ Editor plugin - `app/plugins/toast-ui-editor.client.ts`
-5. ✅ Basic Discord authentication - Guild membership checking in `server/api/auth/[...].ts`
-
-**🔄 In Progress / Next Steps:**
-1. ❌ Create file lock manager system (in-memory) - `server/utils/FileLockManager.ts`
-2. ❌ Implement editor API endpoints - `server/api/editor/`:
-   - `can-edit/{path}.get.ts` - Check permissions and lock status
-   - `acquire-lock/{path}.post.ts` - Acquire file lock
-   - `extend-lock/{path}.post.ts` - Keep-alive for lock
-   - `release-lock/{path}.delete.ts` - Release lock
-   - `content/{path}.get.ts` - Fetch raw markdown from git repo
-   - `save/{path}.post.ts` - Commit, push, sync
-   - `upload-media.post.ts` - Media uploads
+5. ✅ Discord authentication with role checking:
+   - Guild membership checking in `server/api/auth/[...].ts`
+   - Role fetching via Discord Bot API
+   - Session includes roles, isDocEditor, isAdmin flags
+   - `types/auth.ts` updated with full role support
+6. ✅ File lock manager system - `server/utils/FileLockManager.ts`
+   - In-memory lock management
+   - Automatic expiration and cleanup
+   - Lock extension support
+   - Admin override capability
+7. ✅ Editor permissions system - `server/utils/editor-permissions.ts`
+   - Role-based access control
+   - Admin override support
+   - Helper functions for middleware
+8. ✅ Complete API endpoint suite - `server/api/editor/`:
+   - `can-edit/[path].get.ts` - Check permissions and lock status
+   - `acquire-lock/[path].post.ts` - Acquire file lock
+   - `extend-lock/[path].post.ts` - Keep-alive for lock
+   - `release-lock/[path].delete.ts` - Release lock
+   - `content/[path].get.ts` - Fetch raw markdown from git repo
+   - `save/[path].post.ts` - Commit, push, sync workflow
+   - `upload-media.post.ts` - Media file uploads to public/media/
    - `lock-status.get.ts` - Admin: view all locks
-3. ❌ Enhance Discord authentication with ROLE checking:
-   - Extend OAuth to fetch guild member details with roles
-   - Add role ID (1406031220772438137) to session
-   - Update `types/auth.ts` to include roles
-   - Create editor permission helper utilities
-4. ❌ Wire up real content fetching (from git repo raw files)
-5. ❌ Add lock timeout warnings and keep-alive to frontend
 
 ### Phase 2: Frontend Integration
-1. Create editor modal component with timeout popover
-2. Add role-gated edit buttons to pages
-3. Implement lock status indicators
-4. Connect frontend to backend APIs and keep-alive
+**STATUS: ✅ 100% Complete - Full editor integration with lock management**
+
+**✅ Completed:**
+1. ✅ Enhanced `EditorToggleButton` component:
+   - Permission checking via `/api/editor/can-edit` endpoint
+   - Lock status display (shows who is editing)
+   - Real content fetching from git repo via API
+   - Lock acquisition before editing
+   - Role-gated visibility (only shows for users with edit permissions)
+   - Disabled state when file is locked by another user
+2. ✅ Updated `useEditor` composable with full lock management:
+   - Lock keep-alive mechanism (extends lock every 60 seconds)
+   - Lock timeout warnings at 25 minutes
+   - Real save functionality calling `/api/editor/save` endpoint
+   - Git commit/push/sync workflow on save
+   - Automatic lock release on save or cancel
+   - Dirty state tracking for unsaved changes
+   - Confirmation dialog before exiting with unsaved changes
+3. ✅ Integrated with backend APIs:
+   - Permission checks and lock status queries
+   - Content fetching from git repository
+   - Lock acquisition and extension
+   - Save with git workflow
+   - Lock release on completion
+4. ✅ User feedback and notifications:
+   - Toast notifications for all operations
+   - Lock status indicators in button state
+   - Loading states during operations
+   - Error handling with user-friendly messages
 
 ### Phase 3: Commit & Sync
-1. Local repo commit/push functionality
-2. Trigger content synchronization after save
-3. Error handling and recovery
+**STATUS: ✅ 100% Complete - Git workflow fully integrated**
+
+**✅ Completed:**
+1. ✅ Local repo commit/push functionality in `/api/editor/save` endpoint:
+   - Git pull --rebase before writing changes
+   - File write to git repository
+   - Git add and commit with proper author attribution
+   - Git push to remote repository
+   - Commit message format: "docs: update {path} via editor by {userName}"
+2. ✅ Content synchronization after save:
+   - Automatic call to `/api/sync-content` after successful push
+   - Content directory sync from git repo to app content folder
+   - Page reload to display updated content
+3. ✅ Comprehensive error handling:
+   - Lock validation before save
+   - Git conflict detection and reporting
+   - Network error handling
+   - User-friendly error messages
+   - Automatic lock release on errors
+   - No-changes detection (doesn't fail if nothing to commit)
 
 ### Phase 4: Polish & Testing
 1. User experience refinements

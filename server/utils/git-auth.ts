@@ -1,10 +1,34 @@
-import { exec } from 'node:child_process'
+import { exec, execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { existsSync, writeFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+/**
+ * Execute a git command in a specific repository directory
+ * Uses execFile to avoid shell parsing issues with arguments containing spaces
+ */
+export async function execGitCommand(
+  repoPath: string,
+  args: string[],
+  options?: { timeout?: number }
+): Promise<{ stdout: string; stderr: string }> {
+  const timeout = options?.timeout || 60000
+
+  try {
+    const result = await execFileAsync('git', args, {
+      cwd: repoPath,
+      timeout
+    })
+    return result
+  } catch (error: any) {
+    console.error(`[execGitCommand] Failed to execute: git ${args.join(' ')}`, error)
+    throw new Error(`Git command failed: ${error.message}`)
+  }
+}
 
 export interface GitCredentials {
   username: string

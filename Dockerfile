@@ -4,6 +4,8 @@ FROM node:20-bullseye
 
 # Install build tools for native deps (sharp, better-sqlite3, etc.)
 RUN apt-get update && apt-get install -y \
+    git \
+    rsync \
     python3 \
     make \
     g++ \
@@ -26,10 +28,14 @@ RUN pnpm install --no-frozen-lockfile
 # Copy the rest of the app
 COPY . .
 
+# Ensure entrypoint is executable
+RUN chmod +x scripts/entrypoint.sh
+
 # Expose dev port
 EXPOSE 3000
 
-# Default command for development (override in compose if needed)
+# Default entrypoint and command (override in compose if needed)
+ENTRYPOINT ["/usr/bin/env", "bash", "/usr/src/app/scripts/entrypoint.sh"]
 CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 
 
