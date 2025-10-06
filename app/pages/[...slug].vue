@@ -165,6 +165,7 @@ watch(() => editorState.value.currentContent, (content) => {
             </div>
           </template>
         </UContentToc>
+        <CurrentPageViewers :viewers="page.body?.viewers" :editor="editorState.isEnabled" />
       </div>
     </template>
 
