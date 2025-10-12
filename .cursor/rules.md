@@ -9,6 +9,12 @@ Project overview
 - Stack: Nuxt 4, Vue 3, TypeScript, @nuxt/content (MDC), @nuxt/ui, @nuxt/ui-pro 3, nuxt-og-image.
 - Purpose: Content-driven documentation site with searchable, well-structured docs and a polished UI. Docs will be updated in a seperate repo and synced into the content folder using a standardized format.
 
+Considerations
+- Please use all MCP tools available. Context 7 for documents, and Nuxt-MCP for working inside the nuxt project.
+- Always use Nuxt 4 and Vue 3 native functions and best practices for simplicity, and clean execution.
+- Ask follow up questions when you are confused, or if you need clarification. 
+- We are not worried about testing, do not write tests or spend extensive time fixing type/lint errors unless they are code breaking or told directly to work on them.
+
 How to run
 - Install: pnpm install
 - Dev: pnpm dev
