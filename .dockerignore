@@ -3,6 +3,7 @@ node_modules
 .nuxt
 .output
 .next
+.data
 .DS_Store
 .env
 .env.local
