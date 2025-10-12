@@ -15,7 +15,7 @@ export async function execGitCommand(
   repoPath: string,
   args: string[],
   options?: { timeout?: number }
-): Promise<{ stdout: string; stderr: string }> {
+): Promise<{ stdout: string, stderr: string }> {
   const timeout = options?.timeout || 60000
 
   try {
@@ -59,7 +59,7 @@ export class GitAuthManager {
   /**
    * Validate that Git credentials work by testing repository access
    */
-  async validateCredentials(): Promise<{ valid: boolean; error?: string }> {
+  async validateCredentials(): Promise<{ valid: boolean, error?: string }> {
     if (!this.credentials) {
       return { valid: false, error: 'No credentials provided' }
     }
@@ -334,10 +334,10 @@ fi`
       const relevantConfig = userConfig
         .split('\n')
         .filter(line =>
-          line.includes('user.name') ||
-          line.includes('user.email') ||
-          line.includes('credential.') ||
-          line.includes('remote.')
+          line.includes('user.name')
+          || line.includes('user.email')
+          || line.includes('credential.')
+          || line.includes('remote.')
         )
         .filter(line => !line.includes('password') && !line.includes('token'))
 

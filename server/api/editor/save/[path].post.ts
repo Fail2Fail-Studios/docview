@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
     const frontMatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/
     const match = existingContent.match(frontMatterRegex)
 
-    let existingFrontMatter: Record<string, any> = {}
+    const existingFrontMatter: Record<string, any> = {}
 
     if (match) {
       const frontMatterText = match[1]
@@ -246,4 +246,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-

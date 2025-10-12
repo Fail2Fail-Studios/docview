@@ -49,5 +49,4 @@ provide('navigation', navigation)
       />
     </ClientOnly>
   </div>
-
 </template>

@@ -38,7 +38,7 @@ function stripMarkdown(md) {
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/^#+\s+/gm, '')
     .replace(/\!\[[^\]]*\]\([^\)]*\)/g, '')
-    .replace(/\[[^\]]*\]\([^\)]*\)/g, (m) => m.replace(/\[[^\]]*\]\([^\)]*\)/g, ''))
+    .replace(/\[[^\]]*\]\([^\)]*\)/g, m => m.replace(/\[[^\]]*\]\([^\)]*\)/g, ''))
     .replace(/[`*_~>]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -48,7 +48,7 @@ function toTitleFromFilename(name) {
   return name
     .replace(/\.md$/i, '')
     .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (m) => m.toUpperCase())
+    .replace(/\b\w/g, m => m.toUpperCase())
 }
 
 function extractFrontMatterAndBody(raw) {
@@ -178,7 +178,7 @@ function convertSimpleSection(_sectionName, title, srcDir, outDirPrefixed) {
   writeNavigationYml(outDir, title)
 
   const entries = fs.existsSync(srcDir) ? fs.readdirSync(srcDir) : []
-  const mdFiles = entries.filter((f) => f.toLowerCase().endsWith('.md'))
+  const mdFiles = entries.filter(f => f.toLowerCase().endsWith('.md'))
   const sorted = sortBasenamesWithIndexFirst(mdFiles)
 
   sorted.forEach((base, i) => {
@@ -230,7 +230,7 @@ function convertStages() {
     const outSubAbs = path.join(outRoot, outSub)
     ensureDir(outSubAbs)
     writeNavigationYml(outSubAbs, title)
-    const files = fs.readdirSync(src).filter((f) => f.toLowerCase().endsWith('.md'))
+    const files = fs.readdirSync(src).filter(f => f.toLowerCase().endsWith('.md'))
     const sorted = sortBasenamesWithIndexFirst(files)
     sorted.forEach((base, idx) => {
       const numName = toNumberedName(base, idx)
@@ -265,7 +265,7 @@ function writeLanding() {
     '',
     'Explore the documentation by section:',
     '',
-    ...links.map((l) => `- [${l.label}](${l.to})`),
+    ...links.map(l => `- [${l.label}](${l.to})`),
     ''
   ].join('\n')
   writeFile(out, fm)

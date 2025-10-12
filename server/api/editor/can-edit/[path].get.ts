@@ -39,19 +39,21 @@ export default defineEventHandler(async (event) => {
     isAdmin: permission.isAdmin,
     isDocEditor: permission.isDocEditor,
     reason: permission.reason,
-    lock: lockInfo ? {
-      isLocked: true,
-      filePath: lockInfo.filePath,
-      userId: lockInfo.userId,
-      userName: lockInfo.userName,
-      userAvatar: lockInfo.userAvatar,
-      lockedAt: lockInfo.lockedAt.toISOString(),
-      expiresAt: lockInfo.expiresAt.toISOString(),
-      timeRemainingMinutes: Math.round((lockInfo.expiresAt.getTime() - Date.now()) / 60000),
-      isOwnedByCurrentUser: lockInfo.userId === user.id
-    } : {
-      isLocked: false
-    },
+    lock: lockInfo
+      ? {
+          isLocked: true,
+          filePath: lockInfo.filePath,
+          userId: lockInfo.userId,
+          userName: lockInfo.userName,
+          userAvatar: lockInfo.userAvatar,
+          lockedAt: lockInfo.lockedAt.toISOString(),
+          expiresAt: lockInfo.expiresAt.toISOString(),
+          timeRemainingMinutes: Math.round((lockInfo.expiresAt.getTime() - Date.now()) / 60000),
+          isOwnedByCurrentUser: lockInfo.userId === user.id
+        }
+      : {
+          isLocked: false
+        },
     user: {
       id: user.id,
       name: user.name || user.username,
@@ -59,4 +61,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-

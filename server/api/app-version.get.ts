@@ -19,7 +19,7 @@ export default defineEventHandler(async (event): Promise<VersionResponse> => {
     // Get UNA repository configuration
     const config = useRuntimeConfig()
     const repoPath = config.gitRepoPath || ''
-    
+
     // Get commit hash from UNA repository
     let commit = ''
     try {
@@ -42,21 +42,21 @@ export default defineEventHandler(async (event): Promise<VersionResponse> => {
     try {
       if (repoPath && existsSync(repoPath)) {
         const readmePath = join(repoPath, 'README.md')
-        
+
         if (existsSync(readmePath)) {
           console.log(`Reading version from UNA README.md: ${readmePath}`)
           const readmeContent = await readFile(readmePath, 'utf-8')
           const lines = readmeContent.split('\n')
-          
+
           // Check line 3 (index 2) for version information
           if (lines.length >= 3 && lines[2]) {
             const line3 = lines[2].trim()
             console.log(`README.md line 3: "${line3}"`)
-            
+
             // Look for version patterns in line 3
             // Common patterns: v1.2.3, 1.2.3, Version 1.2.3, etc.
             const versionMatch = line3.match(/(?:v|version\s*)?(\d+\.\d+\.\d+(?:-[\w.-]+)?)/i)
-            
+
             if (versionMatch) {
               version = versionMatch[1].startsWith('v') ? versionMatch[1] : `v${versionMatch[1]}`
               console.log(`Extracted version from README.md: ${version}`)
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event): Promise<VersionResponse> => {
       }
     } catch (versionError) {
       console.warn('Failed to read version from UNA README.md:', versionError)
-      
+
       // Fallback: try to get version from git tags in UNA repo
       try {
         if (repoPath && existsSync(repoPath)) {
@@ -102,10 +102,9 @@ export default defineEventHandler(async (event): Promise<VersionResponse> => {
       commit,
       timestamp: Date.now()
     }
-
   } catch (error: any) {
     console.error('Failed to get app version:', error)
-    
+
     return {
       success: false,
       version: 'v1.0.0',

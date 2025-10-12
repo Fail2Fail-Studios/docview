@@ -74,11 +74,13 @@ export default defineEventHandler(async (event): Promise<GitPullResponse> => {
     const startTime = Date.now()
 
     // Create Git authentication manager
-    const credentials = gitUsername && gitToken ? {
-      username: gitUsername,
-      token: gitToken,
-      repoUrl
-    } : undefined
+    const credentials = gitUsername && gitToken
+      ? {
+          username: gitUsername,
+          token: gitToken,
+          repoUrl
+        }
+      : undefined
 
     const gitAuthManager = new GitAuthManager(repoPath, credentials)
 
@@ -118,18 +120,19 @@ export default defineEventHandler(async (event): Promise<GitPullResponse> => {
     } else {
       throw new Error(authResult.error || 'Git pull failed with unknown error')
     }
-
   } catch (error: any) {
     console.error('Git pull failed:', error)
 
     // Get additional diagnostic information for troubleshooting
     let diagnostics: Record<string, any> | undefined
     try {
-      const credentials = gitUsername && gitToken ? {
-        username: gitUsername,
-        token: gitToken,
-        repoUrl
-      } : undefined
+      const credentials = gitUsername && gitToken
+        ? {
+            username: gitUsername,
+            token: gitToken,
+            repoUrl
+          }
+        : undefined
 
       const gitAuthManager = new GitAuthManager(repoPath, credentials)
       diagnostics = await gitAuthManager.getDiagnosticInfo()

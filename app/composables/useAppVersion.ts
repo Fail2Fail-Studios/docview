@@ -44,7 +44,6 @@ export const useAppVersion = () => {
       } else {
         throw new Error(response.error || 'Failed to fetch version info')
       }
-
     } catch (err: any) {
       console.warn('Failed to fetch version info:', err)
       error.value = err?.message || 'Failed to fetch version'
@@ -53,7 +52,6 @@ export const useAppVersion = () => {
       if (versionInfo.value.lastUpdated === null) {
         versionInfo.value.lastUpdated = Date.now()
       }
-
     } finally {
       isLoading.value = false
     }

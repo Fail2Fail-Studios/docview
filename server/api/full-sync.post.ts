@@ -115,11 +115,13 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
     console.log(`Branch: ${branch}`)
 
     // Create Git authentication manager
-    const credentials = gitUsername && gitToken ? {
-      username: gitUsername,
-      token: gitToken,
-      repoUrl
-    } : undefined
+    const credentials = gitUsername && gitToken
+      ? {
+          username: gitUsername,
+          token: gitToken,
+          repoUrl
+        }
+      : undefined
 
     const gitAuthManager = new GitAuthManager(repoPath, credentials)
 
@@ -184,7 +186,7 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
       console.warn(`${commandName} warnings:`, syncResult.stderr)
     }
 
-        const duration = Date.now() - startTime
+    const duration = Date.now() - startTime
     const timestamp = Date.now()
 
     // Get the current commit hash after pull
@@ -220,7 +222,6 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
       syncOutput,
       diagnostics: process.env.NODE_ENV === 'development' ? diagnostics : undefined
     }
-
   } catch (error: any) {
     console.error('Full sync failed:', error)
 
@@ -242,7 +243,7 @@ export default defineEventHandler(async (event): Promise<FullSyncResponse> => {
     } else if (error.stdout || error.stderr) {
       // For robocopy, exit codes 0-3 are actually success, > 3 is error
       if (platform() === 'win32' && error.code <= 3 && error.cmd?.includes('robocopy')) {
-                // This was actually a successful robocopy, continue with success
+        // This was actually a successful robocopy, continue with success
         console.log('Robocopy completed with informational exit code:', error.code)
         console.log('Robocopy output:', error.stdout)
 

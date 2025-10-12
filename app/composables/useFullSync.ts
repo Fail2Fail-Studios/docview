@@ -59,7 +59,7 @@ export const useFullSync = () => {
     error.value = null
   }
 
-    // Perform full sync (git pull + content sync)
+  // Perform full sync (git pull + content sync)
   const performFullSync = async (isAutoSync = false): Promise<void> => {
     if (isLoading.value && !syncState.value.isAutoSyncing) {
       console.warn('Full sync already in progress, ignoring request')
@@ -102,7 +102,6 @@ export const useFullSync = () => {
       } else {
         throw new Error(response.error || 'Full sync failed')
       }
-
     } catch (err: any) {
       console.error('Full sync failed:', err)
 
@@ -120,14 +119,13 @@ export const useFullSync = () => {
           color: 'error'
         })
       }
-
     } finally {
       isLoading.value = false
       currentStep.value = null
     }
   }
 
-    // Computed status object
+  // Computed status object
   const fullSyncStatus = computed<FullSyncStatus>(() => ({
     isLoading: isLoading.value,
     error: error.value,
@@ -135,7 +133,7 @@ export const useFullSync = () => {
     currentStep: currentStep.value
   }))
 
-    return {
+  return {
     // State
     isLoading: readonly(isLoading),
     error: readonly(error),

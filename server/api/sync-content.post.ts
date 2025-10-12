@@ -103,7 +103,6 @@ export default defineEventHandler(async (event): Promise<SyncResponse> => {
       message: 'Documents synced successfully',
       timestamp
     }
-
   } catch (error: any) {
     console.error('Document sync failed:', error)
 

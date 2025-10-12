@@ -79,4 +79,3 @@ export async function requireEditorPermission(event: any): Promise<EditorPermiss
 
   return permission
 }
-
