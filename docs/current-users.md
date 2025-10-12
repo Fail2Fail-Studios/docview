@@ -161,10 +161,17 @@ const presence = usePagePresence(route.path)
 ---
 
 ## Implementation checklist
-- Server composable `usePresenceRegistry` (singleton) with TTL cleanup.
-- Nitro endpoints: `join`, `heartbeat`, `leave`, `list` with auth.
-- Client composable `usePagePresence(pagePath)` with heartbeat + polling.
-- Wire into `app/pages/[...slug].vue` and `CurrentPageViewers.vue`.
-- Align `isEditing` with existing editor lock lifecycle.
+- [x] Server composable `usePresenceRegistry` (singleton) with TTL cleanup.
+- [x] Nitro endpoints: `join`, `heartbeat`, `leave`, `list` with auth.
+- [x] Client composable `usePagePresence(pagePath)` with heartbeat + polling.
+- [x] Wire into `app/pages/[...slug].vue` and `CurrentPageViewers.vue`.
+- [x] Align `isEditing` with existing editor lock lifecycle.
+
+## Implementation notes
+- Types are defined inline in `app/composables/usePagePresence.ts` to avoid Nuxt 4 module resolution issues. Shared types also exist in `types/presence.ts` for server-side usage.
+- Server handlers cast `session.user` to `any` since `nuxt-auth-utils` session types don't match the custom Discord user structure.
+- The `CurrentPageViewers` component hides when no viewers are present (conditional rendering with `v-if`).
+- Editor avatar is visually highlighted with a primary color ring (`ring-2 ring-primary`).
+- Tab count badge is not yet implemented (optional future enhancement).
 
 
