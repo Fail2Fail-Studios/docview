@@ -38,14 +38,19 @@ const finishEditing = () => {
   updateDescription(localValue.value)
 }
 
+const cancelEditing = () => {
+  localValue.value = props.modelValue
+  isEditing.value = false
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
   // Ctrl+Enter or Cmd+Enter to finish
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault()
     finishEditing()
   } else if (e.key === 'Escape') {
-    localValue.value = props.modelValue
-    isEditing.value = false
+    e.preventDefault()
+    cancelEditing()
   }
 }
 </script>
@@ -72,6 +77,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     <div
       v-else
       class="flex flex-col gap-2"
+      data-editable-description
     >
       <UTextarea
         ref="textareaRef"
@@ -80,13 +86,31 @@ const handleKeydown = (e: KeyboardEvent) => {
         :rows="3"
         placeholder="Page description"
         class="flex-1"
-        @blur="finishEditing"
         @keydown="handleKeydown"
       />
-      <p class="text-xs text-gray-500 dark:text-gray-400">
-        Press Ctrl+Enter to save, Esc to cancel
-      </p>
+      <div class="flex items-center justify-between">
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Press Ctrl+Enter to save, Esc to cancel
+        </p>
+        <div class="flex gap-2">
+          <UButton
+            icon="i-lucide-check"
+            color="green"
+            variant="ghost"
+            size="sm"
+            :aria-label="'Save description'"
+            @click="finishEditing"
+          />
+          <UButton
+            icon="i-lucide-x"
+            color="red"
+            variant="ghost"
+            size="sm"
+            :aria-label="'Cancel editing'"
+            @click="cancelEditing"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
-

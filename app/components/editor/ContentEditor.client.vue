@@ -186,4 +186,3 @@ onUnmounted(() => {
   color: rgb(229 146 90);
 }
 </style>
-

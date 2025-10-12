@@ -22,6 +22,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get tabId from request body (optional for backwards compatibility)
+  const body = await readBody(event).catch(() => ({}))
+  const tabId = body?.tabId
+
   // Decode the path
   const decodedPath = decodeURIComponent(path)
 
@@ -33,7 +37,7 @@ export default defineEventHandler(async (event) => {
   const isAdmin = user.isAdmin === true
 
   // Attempt to release lock
-  const success = lockManager.releaseLock(decodedPath, session.user.id, isAdmin)
+  const success = lockManager.releaseLock(decodedPath, session.user.id, tabId, isAdmin)
 
   if (!success) {
     const lockInfo = lockManager.getLockInfo(decodedPath)
@@ -63,4 +67,3 @@ export default defineEventHandler(async (event) => {
     message: 'Lock released successfully'
   }
 })
-

@@ -54,7 +54,26 @@ const links = computed(() => {
 const tocCollapsed = ref(false)
 
 // Editor state
-const { state: editorState } = useEditor()
+const { state: editorState, registerPresenceCallback, registerConfirmationCallback, disableEditor, save } = useEditor()
+
+// Unsaved changes confirmation modal
+const showUnsavedChangesModal = ref(false)
+let unsavedChangesResolve: ((value: 'save' | 'discard' | 'cancel') => void) | null = null
+
+const requestUnsavedChangesConfirmation = (): Promise<'save' | 'discard' | 'cancel'> => {
+  return new Promise((resolve) => {
+    unsavedChangesResolve = resolve
+    showUnsavedChangesModal.value = true
+  })
+}
+
+const handleUnsavedChangesChoice = (choice: 'save' | 'discard' | 'cancel') => {
+  showUnsavedChangesModal.value = false
+  if (unsavedChangesResolve) {
+    unsavedChangesResolve(choice)
+    unsavedChangesResolve = null
+  }
+}
 
 // Reactive title and description for editor mode
 const editableTitle = ref(page.value.title || '')
@@ -67,6 +86,46 @@ watch(() => editorState.value.currentContent, (content) => {
   editableDescription.value = content.description
   editableBody.value = content.body
 }, { deep: true })
+
+// Presence tracking
+const presence = usePagePresence(route.path)
+const currentEditor = computed(() => {
+  const editorId = presence.editorUserId.value
+  if (!editorId) return null
+  return presence.viewers.value.find(v => v.id === editorId) ?? null
+})
+
+// Register callbacks with editor
+onMounted(() => {
+  registerPresenceCallback(presence.setIsEditing)
+  registerConfirmationCallback(requestUnsavedChangesConfirmation)
+
+  // Global Esc handler to close editor
+  const handleEscapeKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && editorState.value.isEnabled) {
+      // Only close editor if not actively editing an input/textarea
+      // Allow Esc from the main content editor (Toast UI) to trigger modal
+      const activeElement = document.activeElement
+      const isEditingTitleOrDescription =
+        (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') &&
+        (activeElement?.closest('[data-editable-title]') || activeElement?.closest('[data-editable-description]'))
+
+      // If editing title or description, let their own Esc handlers deal with it
+      if (isEditingTitleOrDescription) {
+        return
+      }
+
+      // Otherwise, try to close the editor (will show modal if dirty)
+      disableEditor()
+    }
+  }
+
+  window.addEventListener('keydown', handleEscapeKey)
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleEscapeKey)
+  })
+})
 </script>
 
 <template>
@@ -125,10 +184,14 @@ watch(() => editorState.value.currentContent, (content) => {
     </ClientOnly>
 
     <template
-      v-if="page?.body?.toc?.links?.length && !tocCollapsed && !editorState.isEnabled"
+      v-if="page?.body?.toc?.links?.length && !editorState.isEnabled"
       #right
     >
-      <div class="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto overflow-x-hidden">
+      <!-- TOC Expanded View -->
+      <div
+        v-if="!tocCollapsed"
+        class="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto overflow-x-hidden"
+      >
         <!-- TOC Collapse Toggle -->
         <div class="relative">
           <UButton
@@ -165,13 +228,19 @@ watch(() => editorState.value.currentContent, (content) => {
             </div>
           </template>
         </UContentToc>
-        <CurrentPageViewers :viewers="page.body?.viewers" :editor="editorState.isEnabled" />
+        <ClientOnly>
+          <CurrentPageViewers
+            :viewers="presence.viewers.value"
+            :editor="currentEditor"
+          />
+        </ClientOnly>
       </div>
-    </template>
 
-    <!-- TOC Expand Toggle (when collapsed) -->
-    <template v-if="tocCollapsed && page?.body?.toc?.links?.length && !editorState.isEnabled" #right>
-      <div class="sticky top-16">
+      <!-- TOC Collapsed View -->
+      <div
+        v-else
+        class="sticky top-16"
+      >
         <UButton
           icon="i-lucide-chevron-left"
           variant="ghost"
@@ -183,4 +252,57 @@ watch(() => editorState.value.currentContent, (content) => {
       </div>
     </template>
   </UPage>
+
+  <!-- Unsaved Changes Confirmation Modal -->
+  <UModal
+    v-model="showUnsavedChangesModal"
+    :dismissible="false"
+  >
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20">
+          <UIcon
+            name="i-lucide-alert-triangle"
+            class="w-6 h-6 text-amber-600 dark:text-amber-400"
+          />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Unsaved Changes
+        </h3>
+      </div>
+    </template>
+
+    <template #body>
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        You have unsaved changes. What would you like to do?
+      </p>
+    </template>
+
+    <template #footer>
+      <div class="flex flex-col gap-2 sm:flex-row-reverse">
+        <UButton
+          color="green"
+          icon="i-lucide-save"
+          label="Save & Close"
+          size="sm"
+          @click="handleUnsavedChangesChoice('save')"
+        />
+        <UButton
+          color="red"
+          variant="soft"
+          icon="i-lucide-trash-2"
+          label="Discard Changes"
+          size="sm"
+          @click="handleUnsavedChangesChoice('discard')"
+        />
+        <UButton
+          color="gray"
+          variant="ghost"
+          label="Cancel"
+          size="sm"
+          @click="handleUnsavedChangesChoice('cancel')"
+        />
+      </div>
+    </template>
+  </UModal>
 </template>

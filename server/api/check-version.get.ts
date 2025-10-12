@@ -75,11 +75,13 @@ export default defineEventHandler(async (event): Promise<VersionCheckResponse> =
     const gitToken = config.gitToken
 
     // Create Git authentication manager
-    const credentials = gitUsername && gitToken ? {
-      username: gitUsername,
-      token: gitToken,
-      repoUrl
-    } : undefined
+    const credentials = gitUsername && gitToken
+      ? {
+          username: gitUsername,
+          token: gitToken,
+          repoUrl
+        }
+      : undefined
 
     const gitAuthManager = new GitAuthManager(repoPath, credentials)
 
@@ -142,7 +144,6 @@ export default defineEventHandler(async (event): Promise<VersionCheckResponse> =
       remoteCommit,
       hasUpdates
     }
-
   } catch (error: any) {
     console.error('Version check failed:', error)
 

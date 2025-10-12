@@ -53,7 +53,7 @@ onMounted(() => {
           :src="$colorMode.value === 'dark' ? header?.logo?.dark! : header?.logo?.light!"
           :alt="header?.logo?.alt || 'Logo'"
           class="h-6 min-h-[31px] w-auto shrink-0 mr-2"
-        />
+        >
         <div class="flex flex-col w-auto font-sans">
           <span class="text-xl font-bold text-primary-500 dark:text-primary-400">UNA</span>
           <span

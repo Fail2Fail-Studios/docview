@@ -10,6 +10,7 @@ export interface FileLock {
   userId: string
   userName: string
   userAvatar?: string
+  tabId: string
   lockedAt: Date
   expiresAt: Date
   lastExtendedAt?: Date
@@ -64,6 +65,7 @@ class FileLockManager {
     filePath: string,
     userId: string,
     userName: string,
+    tabId: string,
     userAvatar?: string
   ): LockAcquisitionResult {
     // Normalize file path
@@ -77,9 +79,20 @@ class FileLockManager {
       if (new Date() > existingLock.expiresAt) {
         // Lock expired, remove it and allow acquisition
         this.locks.delete(normalizedPath)
+      } else if (existingLock.userId === userId && existingLock.tabId === tabId) {
+        // Same user AND same tab already owns this lock, extend it
+        return this.extendLock(normalizedPath, userId, tabId)
       } else if (existingLock.userId === userId) {
-        // User already owns this lock, extend it
-        return this.extendLock(normalizedPath, userId)
+        // Same user but different tab - deny access
+        return {
+          success: false,
+          error: 'File is currently locked by you in another tab',
+          lockedBy: {
+            userName: existingLock.userName,
+            lockedAt: existingLock.lockedAt,
+            expiresAt: existingLock.expiresAt
+          }
+        }
       } else {
         // Lock is held by another user
         return {
@@ -101,6 +114,7 @@ class FileLockManager {
       userId,
       userName,
       userAvatar,
+      tabId,
       lockedAt: now,
       expiresAt: new Date(now.getTime() + this.lockTimeoutMs)
     }
@@ -116,7 +130,7 @@ class FileLockManager {
   /**
    * Extend an existing lock (keep-alive)
    */
-  extendLock(filePath: string, userId: string): LockAcquisitionResult {
+  extendLock(filePath: string, userId: string, tabId: string): LockAcquisitionResult {
     const normalizedPath = this.normalizePath(filePath)
     const lock = this.locks.get(normalizedPath)
 
@@ -127,10 +141,10 @@ class FileLockManager {
       }
     }
 
-    if (lock.userId !== userId) {
+    if (lock.userId !== userId || lock.tabId !== tabId) {
       return {
         success: false,
-        error: 'Lock is owned by another user',
+        error: 'Lock is owned by another user or tab',
         lockedBy: {
           userName: lock.userName,
           lockedAt: lock.lockedAt,
@@ -153,7 +167,7 @@ class FileLockManager {
   /**
    * Release a lock
    */
-  releaseLock(filePath: string, userId: string, isAdmin: boolean = false): boolean {
+  releaseLock(filePath: string, userId: string, tabId?: string, isAdmin: boolean = false): boolean {
     const normalizedPath = this.normalizePath(filePath)
     const lock = this.locks.get(normalizedPath)
 
@@ -161,8 +175,14 @@ class FileLockManager {
       return false // No lock to release
     }
 
-    // Only the lock owner or admin can release
-    if (lock.userId !== userId && !isAdmin) {
+    // Admins can release any lock
+    if (isAdmin) {
+      this.locks.delete(normalizedPath)
+      return true
+    }
+
+    // Only the same user AND same tab (or admin) can release
+    if (lock.userId !== userId || (tabId && lock.tabId !== tabId)) {
       return false
     }
 
@@ -298,4 +318,3 @@ export function resetFileLockManager(): void {
     lockManagerInstance = null
   }
 }
-

@@ -38,12 +38,17 @@ const finishEditing = () => {
   updateTitle(localValue.value)
 }
 
+const cancelEditing = () => {
+  localValue.value = props.modelValue
+  isEditing.value = false
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter') {
     finishEditing()
   } else if (e.key === 'Escape') {
-    localValue.value = props.modelValue
-    isEditing.value = false
+    e.preventDefault()
+    cancelEditing()
   }
 }
 </script>
@@ -70,6 +75,7 @@ const handleKeydown = (e: KeyboardEvent) => {
     <div
       v-else
       class="flex items-center gap-2"
+      data-editable-title
     >
       <UInput
         ref="inputRef"
@@ -77,10 +83,24 @@ const handleKeydown = (e: KeyboardEvent) => {
         size="xl"
         placeholder="Page title"
         class="flex-1"
-        @blur="finishEditing"
         @keydown="handleKeydown"
+      />
+      <UButton
+        icon="i-lucide-check"
+        color="green"
+        variant="ghost"
+        size="sm"
+        :aria-label="'Save title'"
+        @click="finishEditing"
+      />
+      <UButton
+        icon="i-lucide-x"
+        color="red"
+        variant="ghost"
+        size="sm"
+        :aria-label="'Cancel editing'"
+        @click="cancelEditing"
       />
     </div>
   </div>
 </template>
-

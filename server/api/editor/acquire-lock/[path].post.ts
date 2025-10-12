@@ -25,6 +25,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get tabId from request body
+  const body = await readBody(event)
+  const tabId = body?.tabId
+
+  if (!tabId) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Tab ID is required'
+    })
+  }
+
   // Decode the path (it will be URL-encoded)
   const decodedPath = decodeURIComponent(path)
 
@@ -36,6 +47,7 @@ export default defineEventHandler(async (event) => {
     decodedPath,
     session.user.id,
     session.user.name || session.user.username,
+    tabId,
     session.user.avatar
   )
 
@@ -62,4 +74,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-

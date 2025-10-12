@@ -9,6 +9,9 @@ const isCheckingPermission = ref(false)
 const lockStatus = ref<any>(null)
 const currentFilePath = ref<string>('')
 
+// Get tab ID from editor state
+const tabId = computed(() => state.value.tabId)
+
 // Only show on doc pages (not landing page)
 const isDocPage = computed(() => {
   return route.path !== '/' && route.path !== '/login'
@@ -16,6 +19,27 @@ const isDocPage = computed(() => {
 
 // Get the current page data to access file path
 const page = ref<any>(null)
+
+// Poll lock status to detect changes from other tabs
+let lockCheckInterval: NodeJS.Timeout | null = null
+
+const startLockPolling = () => {
+  if (lockCheckInterval) {
+    clearInterval(lockCheckInterval)
+  }
+  lockCheckInterval = setInterval(() => {
+    if (isDocPage.value && !state.value.isEnabled) {
+      checkPermissions()
+    }
+  }, 10000) // Check every 10 seconds
+}
+
+const stopLockPolling = () => {
+  if (lockCheckInterval) {
+    clearInterval(lockCheckInterval)
+    lockCheckInterval = null
+  }
+}
 
 // Fetch page data when route changes to get actual file path
 watch(() => route.path, async () => {
@@ -27,11 +51,19 @@ watch(() => route.path, async () => {
         extension: page.value?.extension
       })
       await checkPermissions()
+      startLockPolling()
     } catch (error) {
       console.error('Failed to fetch page data:', error)
     }
+  } else {
+    stopLockPolling()
   }
 }, { immediate: true })
+
+// Clean up on unmount
+onBeforeUnmount(() => {
+  stopLockPolling()
+})
 
 // Check if user has edit permissions
 const checkPermissions = async () => {
@@ -67,6 +99,9 @@ const buttonIcon = computed(() => {
   if (state.value.isEnabled && state.value.isDirty) {
     return 'i-lucide-save'
   }
+  if (state.value.isEnabled) {
+    return 'i-lucide-x'
+  }
   if (lockStatus.value?.isLocked && !lockStatus.value?.isOwnedByCurrentUser) {
     return 'i-lucide-lock'
   }
@@ -78,7 +113,7 @@ const buttonLabel = computed(() => {
     return 'Save Changes'
   }
   if (state.value.isEnabled) {
-    return 'Exit Editor'
+    return 'Close Editor'
   }
   if (lockStatus.value?.isLocked && !lockStatus.value?.isOwnedByCurrentUser) {
     return `Locked by ${lockStatus.value.userName}`
@@ -91,12 +126,22 @@ const buttonTitle = computed(() => {
     return 'Save and publish changes'
   }
   if (state.value.isEnabled) {
-    return 'Exit editor mode'
+    return 'Close editor mode (Esc to cancel)'
   }
   if (lockStatus.value?.isLocked && !lockStatus.value?.isOwnedByCurrentUser) {
     return `Currently being edited by ${lockStatus.value.userName}`
   }
   return 'Edit this page'
+})
+
+const buttonColor = computed(() => {
+  if (state.value.isEnabled && state.value.isDirty) {
+    return 'green'
+  }
+  if (state.value.isEnabled) {
+    return 'red'
+  }
+  return undefined
 })
 
 const isDisabled = computed(() => {
@@ -137,7 +182,7 @@ const handleClick = async () => {
         return
       }
 
-      console.log('[EditorToggleButton] Acquiring lock for:', filePath)
+      console.log('[EditorToggleButton] Acquiring lock for:', filePath, 'tabId:', tabId.value)
 
       // First, try to acquire lock
       toast.add({
@@ -147,13 +192,16 @@ const handleClick = async () => {
       })
 
       const lockResponse = await $fetch(`/api/editor/acquire-lock/${encodeURIComponent(filePath)}`, {
-        method: 'POST'
+        method: 'POST',
+        body: {
+          tabId: tabId.value
+        }
       })
 
       if (!lockResponse.success) {
         toast.add({
           title: 'Failed to acquire lock',
-          description: 'This file is currently being edited by someone else',
+          description: lockResponse.error || 'This file is currently being edited',
           color: 'red',
           icon: 'i-lucide-lock'
         })
@@ -177,7 +225,10 @@ const handleClick = async () => {
         })
         // Release lock on failure
         await $fetch(`/api/editor/release-lock/${encodeURIComponent(filePath)}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          body: {
+            tabId: tabId.value
+          }
         })
         return
       }
@@ -214,6 +265,7 @@ const handleClick = async () => {
   <UButton
     v-if="isDocPage && canEdit"
     :icon="buttonIcon"
+    :color="buttonColor"
     variant="ghost"
     size="sm"
     :disabled="isDisabled"
@@ -222,4 +274,3 @@ const handleClick = async () => {
     @click="handleClick"
   />
 </template>
-

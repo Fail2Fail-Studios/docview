@@ -25,6 +25,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get tabId from request body
+  const body = await readBody(event)
+  const tabId = body?.tabId
+
+  if (!tabId) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Tab ID is required'
+    })
+  }
+
   // Decode the path
   const decodedPath = decodeURIComponent(path)
 
@@ -32,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const lockManager = getFileLockManager()
 
   // Attempt to extend lock
-  const result = lockManager.extendLock(decodedPath, session.user.id)
+  const result = lockManager.extendLock(decodedPath, session.user.id, tabId)
 
   if (!result.success) {
     throw createError({
@@ -58,4 +69,3 @@ export default defineEventHandler(async (event) => {
     }
   }
 })
-

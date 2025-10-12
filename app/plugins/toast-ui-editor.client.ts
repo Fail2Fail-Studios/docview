@@ -4,5 +4,3 @@ import '@toast-ui/editor/dist/theme/toastui-editor-dark.css'
 export default defineNuxtPlugin(() => {
   // Styles only
 })
-
-

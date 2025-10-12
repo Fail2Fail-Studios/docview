@@ -1,6 +1,7 @@
 interface EditorState {
   isEnabled: boolean
   filePath: string
+  tabId: string
   originalContent: {
     title: string
     description: string
@@ -18,10 +19,23 @@ interface EditorState {
   lockWarningShown: boolean
 }
 
+// Generate or retrieve tab ID
+const getTabId = () => {
+  if (import.meta.server) return ''
+  const key = 'editor:tab-id'
+  let tabId = sessionStorage.getItem(key)
+  if (!tabId) {
+    tabId = crypto.randomUUID()
+    sessionStorage.setItem(key, tabId)
+  }
+  return tabId
+}
+
 export const useEditor = () => {
   const state = useState<EditorState>('editor', () => ({
     isEnabled: false,
     filePath: '',
+    tabId: import.meta.client ? getTabId() : '',
     originalContent: {
       title: '',
       description: '',
@@ -43,7 +57,26 @@ export const useEditor = () => {
   let keepAliveInterval: NodeJS.Timeout | null = null
   let lockWarningTimeout: NodeJS.Timeout | null = null
 
-  const enableEditor = (content: { title: string; description: string; body: string; rawMarkdown: string; filePath: string }) => {
+  // Ensure tabId is set on client
+  if (import.meta.client && !state.value.tabId) {
+    state.value.tabId = getTabId()
+  }
+
+  // Callback for presence integration
+  const presenceCallbacks = useState<{ setIsEditing?: (next: boolean) => void }>('editor-presence-callbacks', () => ({}))
+
+  const registerPresenceCallback = (callback: (next: boolean) => void) => {
+    presenceCallbacks.value.setIsEditing = callback
+  }
+
+  // Callback for unsaved changes confirmation
+  const confirmationCallback = useState<{ requestConfirmation?: () => Promise<'save' | 'discard' | 'cancel'> }>('editor-confirmation-callback', () => ({}))
+
+  const registerConfirmationCallback = (callback: () => Promise<'save' | 'discard' | 'cancel'>) => {
+    confirmationCallback.value.requestConfirmation = callback
+  }
+
+  const enableEditor = (content: { title: string, description: string, body: string, rawMarkdown: string, filePath: string }) => {
     state.value.originalContent = {
       title: content.title,
       description: content.description,
@@ -60,6 +93,9 @@ export const useEditor = () => {
     state.value.isDirty = false
     state.value.lockExpiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
     state.value.lockWarningShown = false
+
+    // Notify presence system
+    presenceCallbacks.value.setIsEditing?.(true)
 
     // Start lock keep-alive (every 60 seconds)
     startKeepAlive()
@@ -83,7 +119,10 @@ export const useEditor = () => {
 
       try {
         const response = await $fetch(`/api/editor/extend-lock/${encodeURIComponent(state.value.filePath)}`, {
-          method: 'POST'
+          method: 'POST',
+          body: {
+            tabId: state.value.tabId
+          }
         })
 
         if (response.success) {
@@ -143,10 +182,10 @@ export const useEditor = () => {
   }
 
   const checkDirty = () => {
-    state.value.isDirty =
-      state.value.currentContent.title !== state.value.originalContent.title ||
-      state.value.currentContent.description !== state.value.originalContent.description ||
-      state.value.currentContent.body !== state.value.originalContent.body
+    state.value.isDirty
+      = state.value.currentContent.title !== state.value.originalContent.title
+        || state.value.currentContent.description !== state.value.originalContent.description
+        || state.value.currentContent.body !== state.value.originalContent.body
   }
 
   const save = async () => {
@@ -189,6 +228,9 @@ export const useEditor = () => {
         }
         state.value.isDirty = false
 
+        // Notify presence system
+        presenceCallbacks.value.setIsEditing?.(false)
+
         // Stop keep-alive and exit editor
         stopKeepAlive()
         state.value.isEnabled = false
@@ -211,12 +253,26 @@ export const useEditor = () => {
     }
   }
 
-  const disableEditor = async () => {
+  const disableEditor = async (force: boolean = false) => {
     // Confirm if there are unsaved changes
-    if (state.value.isDirty) {
-      const confirmed = confirm('You have unsaved changes. Are you sure you want to exit without saving?')
-      if (!confirmed) {
-        return
+    if (state.value.isDirty && !force) {
+      if (confirmationCallback.value.requestConfirmation) {
+        // Use custom confirmation modal
+        const result = await confirmationCallback.value.requestConfirmation()
+        if (result === 'cancel') {
+          return
+        }
+        if (result === 'save') {
+          await save()
+          return // save() already disables editor after saving
+        }
+        // result === 'discard' continues below
+      } else {
+        // Fallback to native confirm if no callback registered
+        const confirmed = confirm('You have unsaved changes. Are you sure you want to exit without saving?')
+        if (!confirmed) {
+          return
+        }
       }
     }
 
@@ -224,12 +280,18 @@ export const useEditor = () => {
     if (state.value.filePath) {
       try {
         await $fetch(`/api/editor/release-lock/${encodeURIComponent(state.value.filePath)}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          body: {
+            tabId: state.value.tabId
+          }
         })
       } catch (error) {
         console.error('[useEditor] Failed to release lock:', error)
       }
     }
+
+    // Notify presence system
+    presenceCallbacks.value.setIsEditing?.(false)
 
     // Stop keep-alive
     stopKeepAlive()
@@ -249,7 +311,8 @@ export const useEditor = () => {
     updateDescription,
     updateBody,
     save,
-    disableEditor
+    disableEditor,
+    registerPresenceCallback,
+    registerConfirmationCallback
   }
 }
-
