@@ -1,24 +1,31 @@
 <script setup lang="ts">
-import type { Ref } from 'vue'
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { Ref } from "vue";
+import type { ContentNavigationItem } from "@nuxt/content";
 
-const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
-const { header } = useAppConfig()
+const navigation = inject<Ref<ContentNavigationItem[]>>("navigation");
+const { header } = useAppConfig();
 
 // Use composables for auth and menu logic
-const { loggedIn, avatarUrl } = useAuth()
-const { menuItems, accountSlotData } = useUserMenu()
+const { loggedIn, avatarUrl } = useAuth();
+const { menuItems, accountSlotData } = useUserMenu();
 
 // App version information
-const { displayVersion, fetchVersionInfo, versionInfo, isLoading: isVersionLoading } = useAppVersion()
+const {
+  displayVersion,
+  fetchVersionInfo,
+  versionInfo,
+  isLoading: isVersionLoading,
+} = useAppVersion();
 
 // Track if version has been fetched successfully
-const showVersion = computed(() => versionInfo.value.lastUpdated !== null && !isVersionLoading.value)
+const showVersion = computed(
+  () => versionInfo.value.lastUpdated !== null && !isVersionLoading.value,
+);
 
 // Fetch version info on mount
 onMounted(() => {
-  fetchVersionInfo()
-})
+  fetchVersionInfo();
+});
 </script>
 
 <template>
@@ -39,12 +46,18 @@ onMounted(() => {
         class="flex items-center justify-center gap-2"
       >
         <img
-          :src="$colorMode.value === 'dark' ? header?.logo?.dark! : header?.logo?.light!"
+          :src="
+            $colorMode.value === 'dark'
+              ? header?.logo?.dark!
+              : header?.logo?.light!
+          "
           :alt="header?.logo?.alt || 'Logo'"
           class="h-6 min-h-[31px] w-auto shrink-0 mr-2"
-        >
+        />
         <div class="flex flex-col w-auto font-sans">
-          <span class="text-xl font-bold text-primary-500 dark:text-primary-400">UNA</span>
+          <span class="text-xl font-bold text-primary-500 dark:text-primary-400"
+            >UNA</span
+          >
           <span
             class="text-sm text-gray-500 dark:text-gray-500 transition-opacity duration-500"
             :class="showVersion ? 'opacity-100' : 'opacity-0'"
@@ -60,28 +73,26 @@ onMounted(() => {
     </template>
 
     <template #right>
-      <UContentSearchButton
-        v-if="header?.search"
-        class="lg:hidden"
-      />
+      <UContentSearchButton v-if="header?.search" class="lg:hidden" />
 
       <!-- Auth-dependent UI - client only to avoid hydration mismatch -->
       <ClientOnly>
         <!-- Editor Toggle Button -->
-        <EditorToggleButton v-if="loggedIn" />
+        <EditorToggleButton v-if="loggedIn" class="mr-2" />
 
         <!-- Auth Section -->
-        <UDropdownMenu
-          v-if="loggedIn"
-          :items="menuItems"
-        >
-          <UAvatar
-            :src="avatarUrl || undefined"
-            :alt="accountSlotData.name || undefined"
-            size="sm"
-            class="cursor-pointer"
-          />
-
+        <UDropdownMenu v-if="loggedIn" :items="menuItems">
+          <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-primary-500/10 rounded-md px-4">
+            <UAvatar
+              :src="avatarUrl || undefined"
+              :alt="accountSlotData.name || undefined"
+              size="sm"
+              class="cursor-pointer"
+            />
+            <p class="font-medium text-gray-900 dark:text-white">
+              {{ accountSlotData.name }}
+            </p>
+          </div>
           <template #account>
             <div class="text-left">
               <p class="font-medium text-gray-900 dark:text-white">
@@ -107,10 +118,7 @@ onMounted(() => {
     </template>
 
     <template #body>
-      <UContentNavigation
-        highlight
-        :navigation="navigation"
-      />
+      <UContentNavigation highlight :navigation="navigation" />
     </template>
   </UHeader>
 </template>
