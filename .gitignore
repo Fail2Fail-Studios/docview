@@ -29,6 +29,6 @@ logs
 .pnpm-store
 
 una/
-content/
+content
 .content_original/
 .data/
