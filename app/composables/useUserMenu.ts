@@ -1,5 +1,7 @@
 export const useUserMenu = () => {
   const { user, displayName, logout } = useAuth()
+  const colorMode = useColorMode()
+  const { isLoading: isSyncing, performFullSync } = useFullSync()
 
   // Build the dropdown menu items structure
   const menuItems = computed(() => {
@@ -13,7 +15,25 @@ export const useUserMenu = () => {
           slot: 'account'
         }
       ],
-      // Actions section
+      // Settings and actions
+      [
+        {
+          label: 'Update Docs',
+          icon: isSyncing.value ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw',
+          disabled: isSyncing.value,
+          onClick: async () => {
+            await performFullSync()
+          }
+        },
+        {
+          label: colorMode.value === 'dark' ? 'Light Mode' : 'Dark Mode',
+          icon: colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon',
+          onClick: () => {
+            colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+          }
+        }
+      ],
+      // Sign out section
       [
         {
           label: 'Sign Out',

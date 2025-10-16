@@ -110,15 +110,15 @@ const buttonIcon = computed(() => {
 
 const buttonLabel = computed(() => {
   if (state.value.isEnabled && state.value.isDirty) {
-    return 'Save Changes'
+    return 'Save'
   }
   if (state.value.isEnabled) {
-    return 'Close Editor'
+    return 'Cancel'
   }
   if (lockStatus.value?.isLocked && !lockStatus.value?.isOwnedByCurrentUser) {
     return `Locked by ${lockStatus.value.userName}`
   }
-  return 'Edit Page'
+  return 'Edit'
 })
 
 const buttonTitle = computed(() => {
@@ -264,9 +264,10 @@ const handleClick = async () => {
 <template>
   <UButton
     v-if="isDocPage && canEdit"
+    :label="buttonLabel"
     :icon="buttonIcon"
     :color="buttonColor"
-    variant="ghost"
+    variant="solid"
     size="sm"
     :disabled="isDisabled"
     :aria-label="buttonLabel"

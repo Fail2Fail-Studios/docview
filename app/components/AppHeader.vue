@@ -9,26 +9,15 @@ const { header } = useAppConfig()
 const { loggedIn, avatarUrl } = useAuth()
 const { menuItems, accountSlotData } = useUserMenu()
 
-// Full sync functionality (git pull + content sync)
-const {
-  isLoading: isSyncing,
-  performFullSync,
-  lastCheckedFormatted,
-  currentStep
-} = useFullSync()
-
 // App version information
 const { displayVersion, fetchVersionInfo, versionInfo, isLoading: isVersionLoading } = useAppVersion()
 
 // Track if version has been fetched successfully
 const showVersion = computed(() => versionInfo.value.lastUpdated !== null && !isVersionLoading.value)
 
-// Defer version fetch to avoid blocking interactivity
+// Fetch version info on mount
 onMounted(() => {
-  // Wait for user interactions to settle before fetching
-  setTimeout(() => {
-    fetchVersionInfo()
-  }, 1000)
+  fetchVersionInfo()
 })
 </script>
 
@@ -76,25 +65,8 @@ onMounted(() => {
         class="lg:hidden"
       />
 
-      <UColorModeButton v-if="header?.colorMode" />
-
       <!-- Auth-dependent UI - client only to avoid hydration mismatch -->
       <ClientOnly>
-        <!-- Full Sync Button -->
-        <UButton
-          v-if="loggedIn"
-          :icon="isSyncing ? 'i-lucide-loader-2' : 'i-lucide-refresh-cw'"
-          variant="ghost"
-          size="sm"
-          :loading="isSyncing"
-          :disabled="isSyncing"
-          :aria-label="currentStep || 'Update Docs'"
-          :title="
-            currentStep || `Update Docs | Last checked: ${lastCheckedFormatted}`
-          "
-          @click="() => performFullSync()"
-        />
-
         <!-- Editor Toggle Button -->
         <EditorToggleButton v-if="loggedIn" />
 
@@ -125,8 +97,6 @@ onMounted(() => {
         <!-- Fallback: Reserve space for auth buttons to prevent layout shift -->
         <template #fallback>
           <div class="flex items-center gap-1.5">
-            <!-- Placeholder for sync button (8x8 = 32px) -->
-            <div class="size-8" />
             <!-- Placeholder for editor button (8x8 = 32px) -->
             <div class="size-8" />
             <!-- Placeholder for avatar (8x8 = 32px) -->
