@@ -1,6 +1,16 @@
-import '@toast-ui/editor/dist/toastui-editor.css'
-import '@toast-ui/editor/dist/theme/toastui-editor-dark.css'
-
 export default defineNuxtPlugin(() => {
-  // Styles only
+  // Inject Toast UI Editor CSS from public folder to avoid build-time import resolution issues
+  useHead({
+    link: [
+      {
+        rel: 'stylesheet',
+        href: '/toast-ui/toastui-editor.css'
+      },
+      {
+        rel: 'stylesheet',
+        href: '/toast-ui/toastui-editor-dark.css'
+      }
+    ]
+  })
 })
+
