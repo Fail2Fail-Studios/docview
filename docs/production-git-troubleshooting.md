@@ -390,10 +390,10 @@ git -C $NUXT_GIT_REPO_PATH status
 If automated sync fails completely:
 
 ```bash
-# Manual content sync
+# Manual git pull (content is automatically available via symlink)
 cd $NUXT_GIT_REPO_PATH
 git pull origin main
-rsync -av --delete content/ $NUXT_SYNC_DESTINATION_PATH/
+# Note: Content is immediately available at /usr/src/app/content via symlink
 ```
 
 ## Support Information

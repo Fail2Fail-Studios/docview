@@ -56,7 +56,7 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 ## Docker (all-in-one)
 
-This container clones/updates the external docs repository into `/usr/src/una` at startup.
+This container clones/updates the external docs repository into `/usr/src/app/una-repo` at startup and symlinks the content directory for immediate access.
 
 1. Copy `.env.example` to `.env` and fill in variables.
 2. Start: `docker compose up -d --build`
@@ -66,9 +66,7 @@ Important envs:
 - `NUXT_GIT_REPO_URL` - HTTPS URL of docs repo
 - `NUXT_GIT_USERNAME` / `NUXT_GIT_TOKEN` - bot credentials (optional but required for private repos and pushes)
 - `NUXT_GIT_BRANCH` - branch to track (default `main`)
-- `NUXT_GIT_REPO_PATH` - should be `/usr/src/una`
-- `NUXT_SYNC_SOURCE_PATH` - should be `/usr/src/una/content`
-- `NUXT_SYNC_DESTINATION_PATH` - should be `/usr/src/app/content`
+- `NUXT_GIT_REPO_PATH` - path to git repository (default `/usr/src/app/una-repo`)
 
 ## Nuxt Studio integration
 
