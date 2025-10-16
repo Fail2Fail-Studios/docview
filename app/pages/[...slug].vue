@@ -126,6 +126,14 @@ onMounted(() => {
     window.removeEventListener('keydown', handleEscapeKey)
   })
 })
+
+// Clean up editor state when navigating away from the page
+onBeforeUnmount(async () => {
+  // Force disable editor without confirmation on navigation
+  if (editorState.value.isEnabled) {
+    await disableEditor(true)
+  }
+})
 </script>
 
 <template>
