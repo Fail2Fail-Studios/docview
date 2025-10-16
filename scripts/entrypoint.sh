@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Directories
 APP_DIR="/usr/src/app"
-DOCS_DIR="/usr/src/una"
+UNA_REPO_DIR="/usr/src/app/una-repo"
+CONTENT_SYMLINK="/usr/src/app/content"
 
 # Environment-driven configuration
 REPO_URL="${NUXT_GIT_REPO_URL:-}"
@@ -16,7 +17,7 @@ COMMIT_EMAIL="${NUXT_GIT_COMMIT_EMAIL:-docs@fail2.fail}"
 echo "[entrypoint] Starting container initialization..."
 
 # Ensure directories exist
-mkdir -p "$DOCS_DIR"
+mkdir -p "$UNA_REPO_DIR"
 
 # Clone or update docs repository if URL provided
 if [[ -n "$REPO_URL" ]]; then
@@ -28,41 +29,46 @@ if [[ -n "$REPO_URL" ]]; then
     AUTH_URL="${REPO_URL/https:\/\//https:\/\/$USERNAME:$TOKEN@}"
   fi
 
-  if [[ ! -d "$DOCS_DIR/.git" ]]; then
-    echo "[entrypoint] Cloning docs repo into $DOCS_DIR (branch: $BRANCH)"
-    git clone --branch "$BRANCH" "$AUTH_URL" "$DOCS_DIR" || {
+  if [[ ! -d "$UNA_REPO_DIR/.git" ]]; then
+    echo "[entrypoint] Cloning docs repo into $UNA_REPO_DIR (branch: $BRANCH)"
+    git clone --branch "$BRANCH" "$AUTH_URL" "$UNA_REPO_DIR" || {
       echo "[entrypoint] ERROR: Failed to clone repository" >&2
       exit 1
     }
     echo "[entrypoint] Clone completed successfully"
   else
-    echo "[entrypoint] Updating existing docs repo in $DOCS_DIR"
-    git -C "$DOCS_DIR" remote set-url origin "$AUTH_URL" || true
-    git -C "$DOCS_DIR" fetch --all --prune || true
-    git -C "$DOCS_DIR" checkout "$BRANCH" || true
-    git -C "$DOCS_DIR" pull --rebase origin "$BRANCH" || true
+    echo "[entrypoint] Updating existing docs repo in $UNA_REPO_DIR"
+    git -C "$UNA_REPO_DIR" remote set-url origin "$AUTH_URL" || true
+    git -C "$UNA_REPO_DIR" fetch --all --prune || true
+    git -C "$UNA_REPO_DIR" checkout "$BRANCH" || true
+    git -C "$UNA_REPO_DIR" pull --rebase origin "$BRANCH" || true
   fi
 
   # Configure identity and mark directory safe
-  git -C "$DOCS_DIR" config user.name "$COMMIT_NAME" || true
-  git -C "$DOCS_DIR" config user.email "$COMMIT_EMAIL" || true
-  git config --global --add safe.directory "$DOCS_DIR" || true
+  git -C "$UNA_REPO_DIR" config user.name "$COMMIT_NAME" || true
+  git -C "$UNA_REPO_DIR" config user.email "$COMMIT_EMAIL" || true
+  git config --global --add safe.directory "$UNA_REPO_DIR" || true
 
-  echo "[entrypoint] Docs repo ready at $DOCS_DIR"
+  echo "[entrypoint] Docs repo ready at $UNA_REPO_DIR"
 
-  # Sync content to app directory before starting
-  SYNC_SOURCE="${NUXT_SYNC_SOURCE_PATH:-$DOCS_DIR/content}"
-  SYNC_DEST="${NUXT_SYNC_DESTINATION_PATH:-$APP_DIR/content}"
-
-  if [[ -d "$SYNC_SOURCE" ]]; then
-    echo "[entrypoint] Syncing content from $SYNC_SOURCE to $SYNC_DEST"
-    mkdir -p "$SYNC_DEST"
-    rsync -av --delete "$SYNC_SOURCE/" "$SYNC_DEST/" || {
-      echo "[entrypoint] WARNING: Content sync failed, continuing anyway" >&2
-    }
-    echo "[entrypoint] Content sync completed"
+  # Create symlink from app/content to una-repo/content
+  if [[ -L "$CONTENT_SYMLINK" ]]; then
+    echo "[entrypoint] Symlink already exists at $CONTENT_SYMLINK"
+  elif [[ -d "$CONTENT_SYMLINK" ]]; then
+    echo "[entrypoint] Moving existing content directory to content.old"
+    mv "$CONTENT_SYMLINK" "${CONTENT_SYMLINK}.old"
+    ln -sf "$UNA_REPO_DIR/content" "$CONTENT_SYMLINK"
+    echo "[entrypoint] Created symlink: $CONTENT_SYMLINK -> $UNA_REPO_DIR/content"
   else
-    echo "[entrypoint] WARNING: Source content directory not found: $SYNC_SOURCE" >&2
+    ln -sf "$UNA_REPO_DIR/content" "$CONTENT_SYMLINK"
+    echo "[entrypoint] Created symlink: $CONTENT_SYMLINK -> $UNA_REPO_DIR/content"
+  fi
+
+  # Verify symlink
+  if [[ -L "$CONTENT_SYMLINK" && -d "$UNA_REPO_DIR/content" ]]; then
+    echo "[entrypoint] Content symlink verified successfully"
+  else
+    echo "[entrypoint] WARNING: Content symlink verification failed" >&2
   fi
 else
   echo "[entrypoint] No NUXT_GIT_REPO_URL provided; skipping docs clone/update"

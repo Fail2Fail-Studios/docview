@@ -15,7 +15,8 @@ services:
     volumes:
       - .:/usr/src/app:cached
       - node_modules:/usr/src/app/node_modules
-      # Container will self-manage /usr/src/una via entrypoint clone/pull
+      # Container will self-manage /usr/src/app/una-repo via entrypoint clone/pull
+      # Content is symlinked: /usr/src/app/content -> /usr/src/app/una-repo/content
     # Improves file watch performance on Windows/macOS
     develop:
       watch:

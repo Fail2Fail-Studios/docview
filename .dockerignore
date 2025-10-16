@@ -11,4 +11,7 @@ node_modules
 .idea
 pnpm-store
 pnpm-lock.yaml#*merge*
+content/
+content.old/
+una-repo/
 

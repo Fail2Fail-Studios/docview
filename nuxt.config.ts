@@ -61,28 +61,16 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-07-11',
 
+  // Remove prerender configuration - rely on SSR only
   nitro: {
-    prerender: {
-      routes: [
-        '/',
-        // Main content sections
-        '/overview',
-        '/game-design',
-        '/features',
-        '/systems',
-        '/stages',
-        // Key feature pages
-        '/features/mission-system',
-        '/features/squad-system',
-        '/features/combat-system',
-        '/features/core-game-systems',
-        // Stage overview pages
-        '/stages/stage-1',
-        '/stages/stage-2',
-        '/stages/stage-3'
-      ],
-      crawlLinks: true,
-      autoSubfolderIndex: false
+    // Empty - no prerendering
+  },
+
+  // Force SSR for all routes, disable prerendering
+  routeRules: {
+    '/**': {
+      ssr: true,
+      prerender: false
     }
   },
 
@@ -113,13 +101,8 @@ export default defineNuxtConfig({
     discordEditorRoleId: process.env.NUXT_DISCORD_EDITOR_ROLE_ID || '1406031220772438137',
     adminUserIds: process.env.NUXT_ADMIN_USER_IDS?.split(',').map(id => id.trim()) || [],
 
-    // Document sync configuration
-    syncSourcePath: process.env.NUXT_SYNC_SOURCE_PATH,
-    syncDestinationPath: process.env.NUXT_SYNC_DESTINATION_PATH,
-    syncTimeout: parseInt(process.env.NUXT_SYNC_TIMEOUT || '30000'),
-
     // Git repository configuration
-    gitRepoPath: process.env.NUXT_GIT_REPO_PATH,
+    gitRepoPath: process.env.NUXT_GIT_REPO_PATH || '/usr/src/app/una-repo',
     gitRepoUrl: process.env.NUXT_GIT_REPO_URL || 'https://github.com/Fail2Fail-Studios/una',
     gitBranch: process.env.NUXT_GIT_BRANCH || 'main',
     gitTimeout: parseInt(process.env.NUXT_GIT_TIMEOUT || '60000'),
@@ -167,6 +150,11 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ['@toast-ui/editor', '@toast-ui/vue-editor'],
       timeout: 60000 // Increase timeout to 60 seconds for Docker builds
+    },
+    ssr: {
+      // Externalize Toast UI Editor for SSR to avoid build issues
+      external: ['@toast-ui/editor'],
+      noExternal: ['@toast-ui/vue-editor']
     }
   },
 
