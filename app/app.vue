@@ -3,7 +3,12 @@ const { seo } = useAppConfig()
 
 // Make navigation lazy to not block initial render
 const { data: navigation } = useLazyAsyncData('navigation', () => queryCollectionNavigation('docs'))
-const { data: files } = useLazyAsyncData('search', () => queryCollectionSearchSections('docs'), {
+const { data: files } = useLazyAsyncData('search', async () => {
+  const sections = await queryCollectionSearchSections('docs')
+  // Filter out H1 anchor sections (level 1 with hash) to avoid duplicates with page titles
+  // Keep page entries (no hash) and H2-H6 sections (level > 1)
+  return sections.filter(section => !(section.id?.includes('#') && section.level === 1))
+}, {
   server: false
 })
 
