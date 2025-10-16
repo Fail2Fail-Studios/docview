@@ -59,10 +59,10 @@ export const useFullSync = () => {
     error.value = null
   }
 
-  // Perform full sync (git pull + content sync)
+  // Perform git pull (content is immediately available via symlink)
   const performFullSync = async (isAutoSync = false): Promise<void> => {
     if (isLoading.value && !syncState.value.isAutoSyncing) {
-      console.warn('Full sync already in progress, ignoring request')
+      console.warn('Sync already in progress, ignoring request')
       return
     }
 
@@ -73,15 +73,17 @@ export const useFullSync = () => {
 
       console.log(isAutoSync ? 'Starting auto-sync process...' : 'Starting manual sync process...')
 
-      const response = await $fetch<FullSyncResponse>('/api/full-sync', {
+      const response = await $fetch<FullSyncResponse>('/api/git-pull', {
         method: 'POST'
       })
 
       if (response.success) {
         updateLastSyncTime(response.timestamp)
 
-        if (response.commitHash) {
-          updateLastRemoteCommit(response.commitHash)
+        // Git pull response doesn't include commitHash, refresh from version check
+        const versionCheck = await $fetch<VersionCheckResponse>('/api/check-version')
+        if (versionCheck.success && versionCheck.localCommit) {
+          updateLastRemoteCommit(versionCheck.localCommit)
         }
 
         // Refresh version info after successful sync
@@ -100,7 +102,7 @@ export const useFullSync = () => {
 
         console.log(isAutoSync ? 'Auto-sync completed successfully' : 'Manual sync completed successfully')
       } else {
-        throw new Error(response.error || 'Full sync failed')
+        throw new Error(response.error || 'Sync failed')
       }
     } catch (err: any) {
       console.error('Full sync failed:', err)

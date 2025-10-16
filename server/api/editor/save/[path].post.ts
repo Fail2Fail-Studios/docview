@@ -193,22 +193,9 @@ export default defineEventHandler(async (event) => {
 
     console.log('[editor/save] Git workflow completed successfully')
 
-    // 8. Trigger content sync
-    try {
-      // Call sync-content internally by forwarding the authenticated event
-      await $fetch('/api/sync-content', {
-        method: 'POST',
-        headers: {
-          cookie: getHeader(event, 'cookie') || ''
-        }
-      })
-      console.log('[editor/save] Content sync triggered successfully')
-    } catch (syncError) {
-      console.error('[editor/save] Content sync failed:', syncError)
-      // Don't fail the save if sync fails - just log it
-    }
+    // Note: Content is immediately available via symlink - no sync needed
 
-    // 9. Release the lock
+    // 8. Release the lock
     lockManager.releaseLock(decodedPath, user.id, user.isAdmin)
 
     return {

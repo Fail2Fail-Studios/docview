@@ -29,16 +29,14 @@ export default defineNuxtPlugin(async () => {
       if (hasUpdates) {
         console.log('Updates detected, performing auto-sync...')
 
-        // Perform full sync
-        const syncResponse = await $fetch<FullSyncResponse>('/api/full-sync', {
+        // Perform git pull (content is immediately available via symlink)
+        const syncResponse = await $fetch<FullSyncResponse>('/api/git-pull', {
           method: 'POST'
         })
 
         if (syncResponse.success) {
           updateLastSyncTime(syncResponse.timestamp)
-          if (syncResponse.commitHash) {
-            updateLastRemoteCommit(syncResponse.commitHash)
-          }
+          // No commitHash in git-pull response, but we already have remoteCommit from check-version
 
           // Refresh version info after successful auto-sync
           const { fetchVersionInfo } = useAppVersion()

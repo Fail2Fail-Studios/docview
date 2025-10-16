@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Editor from '@toast-ui/editor'
+import type Editor from '@toast-ui/editor'
 
 // Force client-side only rendering for Toast UI Editor
 defineOptions({
@@ -18,11 +18,14 @@ const { updateBody } = useEditor()
 const editorContainer = ref<HTMLDivElement>()
 let editorInstance: Editor | null = null
 
-// Initialize editor after mount
-onMounted(() => {
+// Initialize editor after mount with dynamic import
+onMounted(async () => {
   if (!editorContainer.value) return
 
-  editorInstance = new Editor({
+  // Dynamic import of Editor to avoid SSR build issues
+  const { default: EditorClass } = await import('@toast-ui/editor')
+
+  editorInstance = new EditorClass({
     el: editorContainer.value,
     initialValue: props.modelValue,
     initialEditType: 'markdown',
