@@ -3,7 +3,6 @@ interface SyncState {
   lastCheckTime: number | null
   lastRemoteCommit: string | null
   isAutoSyncing: boolean
-  hasCheckedOnStartup: boolean
 }
 
 export const useSyncState = () => {
@@ -12,8 +11,7 @@ export const useSyncState = () => {
     lastSyncTime: null,
     lastCheckTime: null,
     lastRemoteCommit: null,
-    isAutoSyncing: false,
-    hasCheckedOnStartup: false
+    isAutoSyncing: false
   }))
 
   // Update last sync time
@@ -34,11 +32,6 @@ export const useSyncState = () => {
   // Set auto-syncing state
   const setAutoSyncing = (isAutoSyncing: boolean): void => {
     syncState.value.isAutoSyncing = isAutoSyncing
-  }
-
-  // Mark startup check as completed
-  const markStartupCheckComplete = (): void => {
-    syncState.value.hasCheckedOnStartup = true
   }
 
   // Format last sync time for display
@@ -89,7 +82,6 @@ export const useSyncState = () => {
     updateLastSyncTime,
     updateLastCheckTime,
     updateLastRemoteCommit,
-    setAutoSyncing,
-    markStartupCheckComplete
+    setAutoSyncing
   }
 }

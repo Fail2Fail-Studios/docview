@@ -7,6 +7,11 @@ const { data: files } = useLazyAsyncData('search', () => queryCollectionSearchSe
   server: false
 })
 
+// Fetch version on server-side for SSR hydration
+const { data: versionData } = await useAsyncData('app-version', () =>
+  $fetch('/api/app-version')
+)
+
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
@@ -26,6 +31,7 @@ useSeoMeta({
 })
 
 provide('navigation', navigation)
+provide('appVersion', versionData)
 </script>
 
 <template>

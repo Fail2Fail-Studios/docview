@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DiscordUser } from '../../types/auth'
 import { GitAuthManager } from '../utils/git-auth'
+import { versionCache } from '../utils/version-cache'
 
 interface GitPullResponse {
   success: boolean
@@ -109,6 +110,9 @@ export default defineEventHandler(async (event): Promise<GitPullResponse> => {
 
     if (authResult.success) {
       console.log(`Git pull completed successfully in ${duration}ms using method: ${authResult.method}`)
+
+      // Refresh version cache after successful pull
+      await versionCache.refreshVersion()
 
       return {
         success: true,

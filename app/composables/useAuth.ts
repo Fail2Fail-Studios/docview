@@ -10,6 +10,13 @@ export const useAuth = () => {
   const logout = async (): Promise<void> => {
     try {
       console.log('Logging out user...')
+
+      // Clear auth cache from localStorage
+      if (import.meta.client) {
+        localStorage.removeItem('nuxt-auth-cache')
+        localStorage.removeItem('nuxt-auth-cache-timestamp')
+      }
+
       await clear()
       await navigateTo('/login')
     } catch (error) {

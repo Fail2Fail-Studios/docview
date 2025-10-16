@@ -9,23 +9,12 @@ const { header } = useAppConfig();
 const { loggedIn, avatarUrl } = useAuth();
 const { menuItems, accountSlotData } = useUserMenu();
 
-// App version information
-const {
-  displayVersion,
-  fetchVersionInfo,
-  versionInfo,
-  isLoading: isVersionLoading,
-} = useAppVersion();
+// Inject version from app.vue (SSR hydrated)
+const versionData = inject<Ref<any>>("appVersion");
 
-// Track if version has been fetched successfully
-const showVersion = computed(
-  () => versionInfo.value.lastUpdated !== null && !isVersionLoading.value,
-);
-
-// Fetch version info on mount
-onMounted(() => {
-  fetchVersionInfo();
-});
+// Compute display values from injected version data
+const displayVersion = computed(() => versionData?.value?.version || 'v1.0.0');
+const showVersion = computed(() => !!versionData?.value?.timestamp);
 </script>
 
 <template>

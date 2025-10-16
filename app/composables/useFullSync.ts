@@ -25,10 +25,7 @@ interface FullSyncStatus {
 
 export const useFullSync = () => {
   // Use shared state
-  const { syncState, lastSyncFormatted, lastCheckedFormatted, updateLastSyncTime, updateLastCheckTime, updateLastRemoteCommit, setAutoSyncing, markStartupCheckComplete } = useSyncState()
-
-  // Version management
-  const { fetchVersionInfo } = useAppVersion()
+  const { syncState, lastSyncFormatted, lastCheckedFormatted, updateLastSyncTime, updateLastCheckTime, updateLastRemoteCommit, setAutoSyncing } = useSyncState()
 
   // Reactive state
   const isLoading = ref(false)
@@ -86,8 +83,8 @@ export const useFullSync = () => {
           updateLastRemoteCommit(versionCheck.localCommit)
         }
 
-        // Refresh version info after successful sync
-        fetchVersionInfo()
+        // Refresh version info after successful sync (SSR data)
+        await refreshNuxtData('app-version')
 
         // Show success notification (only for manual sync)
         if (!isAutoSync) {

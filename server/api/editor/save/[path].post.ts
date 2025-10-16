@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { execGitCommand } from '../../../utils/git-auth'
 import { getFileLockManager } from '../../../utils/FileLockManager'
 import { requireEditorPermission } from '../../../utils/editor-permissions'
+import { versionCache } from '../../../utils/version-cache'
 import type { DiscordUser } from '../../../../types/auth'
 
 interface SavePayload {
@@ -192,6 +193,9 @@ export default defineEventHandler(async (event) => {
     await execGitCommand(gitRepoPath, ['push'])
 
     console.log('[editor/save] Git workflow completed successfully')
+
+    // Refresh version cache after successful push
+    await versionCache.refreshVersion()
 
     // Note: Content is immediately available via symlink - no sync needed
 
