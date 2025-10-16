@@ -59,6 +59,10 @@ const { state: editorState, registerPresenceCallback, registerConfirmationCallba
 // Unsaved changes confirmation modal
 const showUnsavedChangesModal = ref(false)
 let unsavedChangesResolve: ((value: 'save' | 'discard' | 'cancel') => void) | null = null
+let pendingNavigation: (() => void) | null = null
+
+// Register navigation block trigger for the global router guard
+const navigationBlock = useState<{ trigger?: (next: () => void) => void }>('editor-navigation-block')
 
 const requestUnsavedChangesConfirmation = (): Promise<'save' | 'discard' | 'cancel'> => {
   return new Promise((resolve) => {
@@ -67,11 +71,43 @@ const requestUnsavedChangesConfirmation = (): Promise<'save' | 'discard' | 'canc
   })
 }
 
-const handleUnsavedChangesChoice = (choice: 'save' | 'discard' | 'cancel') => {
+const handleUnsavedChangesChoice = async (choice: 'save' | 'discard' | 'cancel') => {
   showUnsavedChangesModal.value = false
-  if (unsavedChangesResolve) {
-    unsavedChangesResolve(choice)
-    unsavedChangesResolve = null
+
+  if (choice === 'save') {
+    // Handle navigation case
+    if (pendingNavigation) {
+      await save()
+      // Note: save() already calls disableEditor, so navigation can proceed
+      pendingNavigation()
+      pendingNavigation = null
+    }
+    // Handle manual cancel button case
+    else if (unsavedChangesResolve) {
+      unsavedChangesResolve(choice)
+      unsavedChangesResolve = null
+    }
+  } else if (choice === 'discard') {
+    // Cleanup editor state
+    await disableEditor(true)
+    // Handle navigation case
+    if (pendingNavigation) {
+      pendingNavigation()
+      pendingNavigation = null
+    }
+    // Handle manual cancel button case
+    else if (unsavedChangesResolve) {
+      unsavedChangesResolve(choice)
+      unsavedChangesResolve = null
+    }
+  } else {
+    // Cancel - navigation already blocked by next(false)
+    pendingNavigation = null
+    // Handle manual cancel button case
+    if (unsavedChangesResolve) {
+      unsavedChangesResolve(choice)
+      unsavedChangesResolve = null
+    }
   }
 }
 
@@ -97,6 +133,14 @@ const currentEditor = computed(() => {
 
 // Register callbacks with editor
 onMounted(() => {
+  // Register modal trigger for global navigation guard
+  navigationBlock.value = {
+    trigger: (next: () => void) => {
+      pendingNavigation = next
+      showUnsavedChangesModal.value = true
+    }
+  }
+
   registerPresenceCallback(presence.setIsEditing)
   registerConfirmationCallback(requestUnsavedChangesConfirmation)
 
@@ -120,16 +164,29 @@ onMounted(() => {
     }
   }
 
+  // Browser-level protection against losing unsaved changes
+  const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+    if (editorState.value.isEnabled && editorState.value.isDirty) {
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+  }
+
   window.addEventListener('keydown', handleEscapeKey)
+  window.addEventListener('beforeunload', beforeUnloadHandler)
 
   onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleEscapeKey)
+    window.removeEventListener('beforeunload', beforeUnloadHandler)
   })
 })
 
-// Clean up editor state when navigating away from the page
+// Clean up editor state if still active (edge cases like direct URL change)
 onBeforeUnmount(async () => {
-  // Force disable editor without confirmation on navigation
+  // Clean up navigation block trigger
+  navigationBlock.value = {}
+
   if (editorState.value.isEnabled) {
     await disableEditor(true)
   }
@@ -263,7 +320,7 @@ onBeforeUnmount(async () => {
 
   <!-- Unsaved Changes Confirmation Modal -->
   <UModal
-    v-model="showUnsavedChangesModal"
+    v-model:open="showUnsavedChangesModal"
     :dismissible="false"
   >
     <template #header>
