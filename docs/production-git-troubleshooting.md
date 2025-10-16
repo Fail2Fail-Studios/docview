@@ -106,21 +106,21 @@ The `method` field tells you which authentication approach succeeded:
 
 1. **Verify Repository Path:**
    ```bash
-   ls -la $NUXT_GIT_REPO_PATH
-   ls -la $NUXT_GIT_REPO_PATH/.git
+   ls -la /usr/src/app/una-repo
+   ls -la /usr/src/app/una-repo/.git
    ```
 
 2. **Check Git Repository Status:**
    ```bash
-   cd $NUXT_GIT_REPO_PATH
-   git status
-   git remote -v
+cd /usr/src/app/una-repo
+git status
+git remote -v
    ```
 
 **Solutions:**
 
 - **Missing Repository:** Clone repository to correct path
-- **Wrong Path:** Update `NUXT_GIT_REPO_PATH` environment variable
+- **Wrong Path:** Verify repository is at `/usr/src/app/una-repo` (static path, rarely needs changing)
 - **Permissions:** Ensure application has read/write access to repository directory
 
 ### Issue 4: Network Connectivity Problems
@@ -220,7 +220,7 @@ cat ~/.ssh/id_ed25519.pub
 # Copy and add to GitHub SSH keys
 
 # Update Git remote to use SSH
-cd $NUXT_GIT_REPO_PATH
+cd /usr/src/app/una-repo
 git remote set-url origin git@github.com:Fail2Fail-Studios/una.git
 ```
 
@@ -235,7 +235,7 @@ services:
     environment:
       - NUXT_GIT_USERNAME=${GIT_USERNAME}
       - NUXT_GIT_TOKEN=${GIT_TOKEN}
-      - NUXT_GIT_REPO_PATH=/app/content-repo
+      - NUXT_GIT_REPO_PATH=/app/content-repo  # Optional: override default path
 ```
 
 **PM2 Ecosystem:**
@@ -247,7 +247,7 @@ module.exports = {
     env: {
       NUXT_GIT_USERNAME: process.env.GIT_USERNAME,
       NUXT_GIT_TOKEN: process.env.GIT_TOKEN,
-      NUXT_GIT_REPO_PATH: '/var/www/content-repo'
+      NUXT_GIT_REPO_PATH: '/var/www/content-repo'  # Optional: override default path
     }
   }]
 }
@@ -265,7 +265,7 @@ chown -R app:app content-repo
 
 **Set Environment Variable:**
 ```bash
-export NUXT_GIT_REPO_PATH=/var/www/content-repo
+export NUXT_GIT_REPO_PATH=/var/www/content-repo  # Optional: override default /usr/src/app/una-repo
 ```
 
 ### 3. Monitoring and Alerts
@@ -342,7 +342,7 @@ curl -H "Cookie: your-session-cookie" \
 ### Manual Git Test
 ```bash
 # Test authentication from server
-cd $NUXT_GIT_REPO_PATH
+cd /usr/src/app/una-repo
 git ls-remote origin
 
 # Test pull operation
@@ -355,8 +355,8 @@ git pull origin main
 printenv | grep -E "(GIT|NUXT)" | sort
 
 # Verify repository setup
-ls -la $NUXT_GIT_REPO_PATH
-git -C $NUXT_GIT_REPO_PATH status
+ls -la /usr/src/app/una-repo
+git -C /usr/src/app/una-repo status
 ```
 
 ## Recovery Procedures
@@ -366,7 +366,7 @@ git -C $NUXT_GIT_REPO_PATH status
 1. **Immediate Recovery:**
    ```bash
    # Switch to SSH authentication temporarily
-   cd $NUXT_GIT_REPO_PATH
+   cd /usr/src/app/una-repo
    git remote set-url origin git@github.com:Fail2Fail-Studios/una.git
    ```
 
@@ -391,7 +391,7 @@ If automated sync fails completely:
 
 ```bash
 # Manual git pull (content is automatically available via symlink)
-cd $NUXT_GIT_REPO_PATH
+cd /usr/src/app/una-repo
 git pull origin main
 # Note: Content is immediately available at /usr/src/app/content via symlink
 ```

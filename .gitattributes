@@ -1,0 +1,11 @@
+# Ensure shell scripts always use LF line endings (Unix-style)
+# This prevents issues when running scripts in Docker containers on Windows
+*.sh text eol=lf
+
+# Ensure other script files use LF
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# Dockerfile should also use LF
+Dockerfile text eol=lf
+

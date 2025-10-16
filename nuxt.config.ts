@@ -102,7 +102,7 @@ export default defineNuxtConfig({
     adminUserIds: process.env.NUXT_ADMIN_USER_IDS?.split(',').map(id => id.trim()) || [],
 
     // Git repository configuration
-    gitRepoPath: process.env.NUXT_GIT_REPO_PATH || '/usr/src/app/una-repo',
+    gitRepoPath: process.env.NUXT_GIT_REPO_PATH || '/usr/src/app/una-repo', // Optional: matches static path in entrypoint.sh
     gitRepoUrl: process.env.NUXT_GIT_REPO_URL || 'https://github.com/Fail2Fail-Studios/una',
     gitBranch: process.env.NUXT_GIT_BRANCH || 'main',
     gitTimeout: parseInt(process.env.NUXT_GIT_TIMEOUT || '60000'),

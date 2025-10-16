@@ -62,11 +62,18 @@ This container clones/updates the external docs repository into `/usr/src/app/un
 2. Start: `docker compose up -d --build`
 3. App runs at `http://localhost:3000`
 
-Important envs:
+### Required Environment Variables:
 - `NUXT_GIT_REPO_URL` - HTTPS URL of docs repo
-- `NUXT_GIT_USERNAME` / `NUXT_GIT_TOKEN` - bot credentials (optional but required for private repos and pushes)
-- `NUXT_GIT_BRANCH` - branch to track (default `main`)
-- `NUXT_GIT_REPO_PATH` - path to git repository (default `/usr/src/app/una-repo`)
+- `NUXT_SESSION_PASSWORD` - Session encryption key
+- Discord OAuth credentials (if using authentication)
+
+### Optional Environment Variables (with defaults):
+- `NUXT_GIT_REPO_PATH` - Git repo path (default: `/usr/src/app/una-repo`)
+- `NUXT_GIT_BRANCH` - Branch to track (default: `main`)
+- `NUXT_GIT_USERNAME` / `NUXT_GIT_TOKEN` - Git credentials (required for private repos and pushes)
+- `NUXT_GIT_COMMIT_NAME` - Commit author name (default: `Docs Bot`)
+- `NUXT_GIT_COMMIT_EMAIL` - Commit author email (default: `docs@fail2.fail`)
+- `NUXT_GIT_TIMEOUT` - Git operation timeout in ms (default: `60000`)
 
 ## Nuxt Studio integration
 

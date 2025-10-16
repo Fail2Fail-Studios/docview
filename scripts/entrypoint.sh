@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Directories
-APP_DIR="/usr/src/app"
-UNA_REPO_DIR="/usr/src/app/una-repo"
-CONTENT_SYMLINK="/usr/src/app/content"
+# Fixed directory structure (not configurable for this singleton app)
+UNA_REPO_DIR="/usr/src/app/una-repo"    # Git repo clone location
+CONTENT_SYMLINK="/usr/src/app/content"  # Symlink to repo's content directory
 
 # Environment-driven configuration
 REPO_URL="${NUXT_GIT_REPO_URL:-}"
@@ -76,5 +75,3 @@ fi
 
 echo "[entrypoint] Launching app: $*"
 exec "$@"
-
-
