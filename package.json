@@ -10,13 +10,16 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "compose:up": "docker compose up --build -d",
-    "compose:down": "docker compose down",
-    "compose:logs": "docker compose logs -f",
-    "compose:exec": "docker compose exec app sh",
-    "compose:build": "docker compose build",
-    "compose:restart": "docker compose restart",
-    "compose:stop": "docker compose stop"
+    "compose:up": "sudo docker compose up --build -d",
+    "compose:down": "sudo docker compose down",
+    "compose:logs": "sudo docker compose logs -f",
+    "compose:exec": "sudo docker compose exec app sh",
+    "compose:build": "sudo docker compose build",
+    "compose:restart": "sudo docker compose restart",
+    "compose:stop": "sudo docker compose stop",
+    "screen:up": "screen -S f2f-docview -d -m pnpm dev",
+    "screen:down": "screen -X -S f2f-docview quit",
+    "reconnect": "screen -r f2f-docview"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.57",
