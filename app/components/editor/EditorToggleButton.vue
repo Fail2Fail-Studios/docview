@@ -215,7 +215,7 @@ const handleClick = async () => {
         timeout: 2000
       })
 
-      const contentResponse = await $fetch(`/api/editor/content/${encodeURIComponent(filePath)}`)
+      const contentResponse = await $fetch(`/api/editor/fetch-content/${encodeURIComponent(filePath)}`)
 
       if (!contentResponse.success) {
         toast.add({
