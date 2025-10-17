@@ -1,10 +1,15 @@
 version: "3.9"
 
 services:
+  # ============================================
+  # Development Service - Hot-reload with volumes
+  # ============================================
   app:
+    profiles: ["dev"]
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     container_name: f2f-docview-dev
     command: pnpm dev --host 0.0.0.0
     ports:
@@ -30,7 +35,30 @@ services:
             - .nuxt/
             - .output/
 
+  # ============================================
+  # Production Service - Serves built .output
+  # ============================================
+  app-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - NUXT_GIT_REPO_URL=${NUXT_GIT_REPO_URL}
+        - NUXT_GIT_BRANCH=${NUXT_GIT_BRANCH:-main}
+        - NUXT_GIT_USERNAME=${NUXT_GIT_USERNAME}
+        - NUXT_GIT_TOKEN=${NUXT_GIT_TOKEN}
+    container_name: f2f-docview-prod
+    ports:
+      - "3169:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    # No volumes - production uses built .output inside the image
+    # Content sync still happens via entrypoint.sh at runtime if NUXT_GIT_REPO_URL is set
+
 volumes:
   node_modules:
-
-
