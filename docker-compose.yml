@@ -13,7 +13,7 @@ services:
     container_name: f2f-docview-dev
     command: pnpm dev --host 0.0.0.0
     ports:
-      - "3169:3169"
+      - "3169:3000"
       - "4000:4000"
     env_file:
       - .env
