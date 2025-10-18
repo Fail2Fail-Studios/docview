@@ -139,8 +139,20 @@ onMounted(() => {
       :headline="headline"
     />
 
+<<<<<<< HEAD
     <UPageBody v-show="!editorState.isEnabled" id="main-content">
       <ContentRenderer v-if="page" :value="page" />
+=======
+    <UPageBody
+      v-show="!editorState.isEnabled"
+      id="main-content"
+      class="ml-4"
+    >
+      <ContentRenderer
+        v-if="page"
+        :value="page"
+      />
+>>>>>>> 7013010 (fix(page): add left margin to main content for improved layout)
 
       <USeparator v-if="surround?.length" />
 
