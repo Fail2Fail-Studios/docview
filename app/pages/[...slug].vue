@@ -58,8 +58,13 @@ const links = computed(() => {
   return [...links, ...(toc?.bottom?.links || [])].filter(Boolean);
 });
 
+<<<<<<< HEAD
 // TOC collapse state
 const tocCollapsed = ref(false);
+=======
+// TOC collapse state - shared with layout
+const tocCollapsed = useState('tocCollapsed', () => false)
+>>>>>>> f941aca9c8d334b8a0c98c675b4384f645174f49
 
 // Editor state
 const {
@@ -156,6 +161,25 @@ const currentEditor = computed(() => {
   if (!editorId) return null;
   return presence.viewers.value.find((v) => v.id === editorId) ?? null;
 });
+
+// Share TOC data with layout via useState (only serializable data)
+const sharedTocData = useState('tocData', () => null as any)
+
+// Update shared state with current page data (only values, no functions)
+watchEffect(() => {
+  if (page.value) {
+    sharedTocData.value = {
+      hasToc: !!page.value?.body?.toc?.links?.length,
+      tocLinks: page.value?.body?.toc?.links,
+      tocTitle: toc?.title,
+      tocBottom: toc?.bottom,
+      links: links.value,
+      viewers: presence.viewers.value,
+      currentEditor: currentEditor.value,
+      isEditorEnabled: editorState.value.isEnabled
+    }
+  }
+})
 
 // Register callbacks with editor
 onMounted(() => {
