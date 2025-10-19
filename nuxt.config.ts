@@ -109,6 +109,10 @@ export default defineNuxtConfig({
     gitUsername: process.env.NUXT_GIT_USERNAME,
     gitToken: process.env.NUXT_GIT_TOKEN,
 
+    // Editor and Presence configuration
+    editorLockTimeoutMs: parseInt(process.env.NUXT_EDITOR_LOCK_TIMEOUT_MS || '1800000'), // Default: 30 minutes
+    presenceTtlMs: parseInt(process.env.NUXT_PRESENCE_TTL_MS || '45000'), // Default: 45 seconds
+
     // Session configuration
     session: {
       name: 'nuxt-session',

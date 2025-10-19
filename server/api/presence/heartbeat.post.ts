@@ -1,3 +1,5 @@
+import type { DiscordUser } from '../../../types/auth'
+
 export default defineEventHandler(async (event) => {
   const session = await requireUserSession(event)
   const body = await readBody(event)
@@ -18,8 +20,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const user = session.user as DiscordUser
   const registry = usePresenceRegistry()
-  registry.heartbeat(pagePath, tabId, (session.user as any).id, !!isEditing)
+  registry.heartbeat(pagePath, tabId, user.id, !!isEditing)
 
   return { success: true }
 })
