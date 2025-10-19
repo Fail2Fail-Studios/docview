@@ -1,10 +1,5 @@
 <script setup lang="ts">
-interface PresenceSnapshotUser {
-  id: string;
-  name: string;
-  avatar?: string;
-  tabCount: number;
-}
+import type { PresenceSnapshotUser } from '../../types/presence'
 
 interface Props {
   viewers: PresenceSnapshotUser[];
