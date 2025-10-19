@@ -23,14 +23,14 @@ const processedNavigation = computed(() => {
   <UPage
     :ui="{
       root: 'flex flex-col lg:grid lg:grid-cols-12 lg:gap-6',
-      left: 'lg:col-span-3 max-w-[350px]',
+      left: 'lg:col-span-3',
       center: 'lg:col-span-9 mr-auto sm:mx-4',
       right: 'lg:col-span-3 order-first lg:order-last'
     }"
   >
     <template #left>
       <UPageAside>
-        <UContentNavigation :navigation="processedNavigation" />
+        <UContentNavigation :navigation="processedNavigation" class="pl-4" />
       </UPageAside>
     </template>
     <main>

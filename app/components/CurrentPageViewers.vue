@@ -17,7 +17,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div v-if="viewers.length > 0" class="flex flex-col gap-2 mt-4 p-4">
+  <div v-if="viewers.length > 0" class="flex flex-col gap-2 mt-4">
     <div v-if="editor" class="flex flex-col gap-2">
       <p class="text-sm font-semibold">Currently Editing:</p>
       <div class="flex items-center gap-2">
