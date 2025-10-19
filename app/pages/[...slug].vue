@@ -2,12 +2,12 @@
 import type { ContentNavigationItem } from "@nuxt/content";
 import { findPageHeadline } from "@nuxt/content/utils";
 
-// Layout automatically uses default.vue
-
+// ===== Content Loading and SEO =====
 const route = useRoute();
 const { toc } = useAppConfig();
 const navigation = inject<Ref<ContentNavigationItem[]>>("navigation");
 
+// Fetch page content
 const { data: page } = await useAsyncData(route.path, () =>
   queryCollection("docs").path(route.path).first(),
 );
@@ -19,13 +19,14 @@ if (!page.value) {
   });
 }
 
-// Make surround lazy - it's nice-to-have, not critical for initial render
+// Lazy-load surrounding pages for navigation (non-critical)
 const { data: surround } = useLazyAsyncData(`${route.path}-surround`, () => {
   return queryCollectionItemSurroundings("docs", route.path, {
     fields: ["description"],
   });
 });
 
+// SEO metadata
 const title = page.value.seo?.title || page.value.title;
 const description = page.value.seo?.description || page.value.description;
 
@@ -44,6 +45,8 @@ defineOgImageComponent("Docs", {
   headline: headline.value,
 });
 
+// ===== Computed Properties =====
+
 const links = computed(() => {
   const links = [];
   if (toc?.bottom?.edit) {
@@ -57,84 +60,21 @@ const links = computed(() => {
 
   return [...links, ...(toc?.bottom?.links || [])].filter(Boolean);
 });
-// Editor state
+
+// ===== Editor State =====
+// Editor composable now handles navigation blocking, keyboard shortcuts, and modal logic
 const {
   state: editorState,
   registerPresenceCallback,
-  registerConfirmationCallback,
-  disableEditor,
-  save,
+  showUnsavedChangesModal,
+  handleUnsavedChangesChoice
 } = useEditor();
 
-// Unsaved changes confirmation modal
-const showUnsavedChangesModal = ref(false);
-let unsavedChangesResolve:
-  | ((value: "save" | "discard" | "cancel") => void)
-  | null = null;
-let pendingNavigation: (() => void) | null = null;
-
-// Register navigation block trigger for the global router guard
-const navigationBlock = useState<{ trigger?: (next: () => void) => void }>(
-  "editor-navigation-block",
-);
-
-const requestUnsavedChangesConfirmation = (): Promise<
-  "save" | "discard" | "cancel"
-> => {
-  return new Promise((resolve) => {
-    unsavedChangesResolve = resolve;
-    showUnsavedChangesModal.value = true;
-  });
-};
-
-const handleUnsavedChangesChoice = async (
-  choice: "save" | "discard" | "cancel",
-) => {
-  showUnsavedChangesModal.value = false;
-
-  if (choice === "save") {
-    // Handle navigation case
-    if (pendingNavigation) {
-      await save();
-      // Note: save() already calls disableEditor, so navigation can proceed
-      pendingNavigation();
-      pendingNavigation = null;
-    }
-    // Handle manual cancel button case
-    else if (unsavedChangesResolve) {
-      unsavedChangesResolve(choice);
-      unsavedChangesResolve = null;
-    }
-  } else if (choice === "discard") {
-    // Cleanup editor state
-    await disableEditor(true);
-    // Handle navigation case
-    if (pendingNavigation) {
-      pendingNavigation();
-      pendingNavigation = null;
-    }
-    // Handle manual cancel button case
-    else if (unsavedChangesResolve) {
-      unsavedChangesResolve(choice);
-      unsavedChangesResolve = null;
-    }
-  } else {
-    // Cancel - navigation already blocked by next(false)
-    pendingNavigation = null;
-    // Handle manual cancel button case
-    if (unsavedChangesResolve) {
-      unsavedChangesResolve(choice);
-      unsavedChangesResolve = null;
-    }
-  }
-};
-
-// Reactive title and description for editor mode
+// Editable content refs (synced with editor state)
 const editableTitle = ref(page.value.title || "");
 const editableDescription = ref(page.value.description || "");
 const editableBody = ref("");
 
-// Watch for changes from the editor state
 watch(
   () => editorState.value.currentContent,
   (content) => {
@@ -145,7 +85,8 @@ watch(
   { deep: true },
 );
 
-// Presence tracking
+// ===== Presence Tracking =====
+// Track who is viewing/editing this page
 const presence = usePagePresence(route.path);
 const currentEditor = computed(() => {
   const editorId = presence.editorUserId.value;
@@ -153,10 +94,10 @@ const currentEditor = computed(() => {
   return presence.viewers.value.find((v) => v.id === editorId) ?? null;
 });
 
-// Share TOC data with layout via useState (only serializable data)
+// ===== Layout Integration =====
+// Share TOC and viewer data with layout via useState (only serializable data)
 const sharedTocData = useState('tocData', () => null as any)
 
-// Update shared state with current page data (only values, no functions)
 watchEffect(() => {
   if (page.value) {
     sharedTocData.value = {
@@ -172,67 +113,10 @@ watchEffect(() => {
   }
 })
 
-// Register callbacks with editor
+// ===== Lifecycle =====
+// Connect presence tracking to editor on mount
 onMounted(() => {
-  // Register modal trigger for global navigation guard
-  navigationBlock.value = {
-    trigger: (next: () => void) => {
-      pendingNavigation = next;
-      showUnsavedChangesModal.value = true;
-    },
-  };
-
   registerPresenceCallback(presence.setIsEditing);
-  registerConfirmationCallback(requestUnsavedChangesConfirmation);
-
-  // Global Esc handler to close editor
-  const handleEscapeKey = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && editorState.value.isEnabled) {
-      // Only close editor if not actively editing an input/textarea
-      // Allow Esc from the main content editor (Toast UI) to trigger modal
-      const activeElement = document.activeElement;
-      const isEditingTitleOrDescription =
-        (activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA") &&
-        (activeElement?.closest("[data-editable-title]") ||
-          activeElement?.closest("[data-editable-description]"));
-
-      // If editing title or description, let their own Esc handlers deal with it
-      if (isEditingTitleOrDescription) {
-        return;
-      }
-
-      // Otherwise, try to close the editor (will show modal if dirty)
-      disableEditor();
-    }
-  };
-
-  // Browser-level protection against losing unsaved changes
-  const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
-    if (editorState.value.isEnabled && editorState.value.isDirty) {
-      e.preventDefault();
-      e.returnValue = "";
-      return "";
-    }
-  };
-
-  window.addEventListener("keydown", handleEscapeKey);
-  window.addEventListener("beforeunload", beforeUnloadHandler);
-
-  onBeforeUnmount(() => {
-    window.removeEventListener("keydown", handleEscapeKey);
-    window.removeEventListener("beforeunload", beforeUnloadHandler);
-  });
-});
-
-// Clean up editor state if still active (edge cases like direct URL change)
-onBeforeUnmount(async () => {
-  // Clean up navigation block trigger
-  navigationBlock.value = {};
-
-  if (editorState.value.isEnabled) {
-    await disableEditor(true);
-  }
 });
 </script>
 
@@ -291,21 +175,14 @@ onBeforeUnmount(async () => {
     </template>
   </UPage>
 
-  <!-- Unsaved Changes Confirmation Modal -->
+  <!-- Unsaved Changes Modal -->
   <UModal v-model:open="showUnsavedChangesModal" :dismissible="false">
     <template #header>
       <div class="flex items-center gap-3">
-        <div
-          class="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20"
-        >
-          <UIcon
-            name="i-lucide-alert-triangle"
-            class="w-6 h-6 text-amber-600 dark:text-amber-400"
-          />
+        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20">
+          <UIcon name="i-lucide-alert-triangle" class="w-6 h-6 text-amber-600 dark:text-amber-400" />
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          Unsaved Changes
-        </h3>
+        <h3 class="text-lg font-semibold">Unsaved Changes</h3>
       </div>
     </template>
 
@@ -317,28 +194,9 @@ onBeforeUnmount(async () => {
 
     <template #footer>
       <div class="flex flex-col gap-2 sm:flex-row-reverse">
-        <UButton
-          color="green"
-          icon="i-lucide-save"
-          label="Save & Close"
-          size="sm"
-          @click="handleUnsavedChangesChoice('save')"
-        />
-        <UButton
-          color="red"
-          variant="soft"
-          icon="i-lucide-trash-2"
-          label="Discard Changes"
-          size="sm"
-          @click="handleUnsavedChangesChoice('discard')"
-        />
-        <UButton
-          color="gray"
-          variant="ghost"
-          label="Cancel"
-          size="sm"
-          @click="handleUnsavedChangesChoice('cancel')"
-        />
+        <UButton color="green" icon="i-lucide-save" label="Save & Close" size="sm" @click="handleUnsavedChangesChoice('save')" />
+        <UButton color="red" variant="soft" icon="i-lucide-trash-2" label="Discard Changes" size="sm" @click="handleUnsavedChangesChoice('discard')" />
+        <UButton color="gray" variant="ghost" label="Cancel" size="sm" @click="handleUnsavedChangesChoice('cancel')" />
       </div>
     </template>
   </UModal>

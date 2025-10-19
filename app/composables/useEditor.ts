@@ -69,11 +69,112 @@ export const useEditor = () => {
     presenceCallbacks.value.setIsEditing = callback
   }
 
-  // Callback for unsaved changes confirmation
-  const confirmationCallback = useState<{ requestConfirmation?: () => Promise<'save' | 'discard' | 'cancel'> }>('editor-confirmation-callback', () => ({}))
+  // ===== Unsaved Changes Modal Management =====
+  const showUnsavedChangesModal = ref(false)
+  let unsavedChangesResolve: ((value: 'save' | 'discard' | 'cancel') => void) | null = null
+  let pendingNavigation: (() => void) | null = null
 
-  const registerConfirmationCallback = (callback: () => Promise<'save' | 'discard' | 'cancel'>) => {
-    confirmationCallback.value.requestConfirmation = callback
+  // Navigation block registration for the global router guard
+  const navigationBlock = useState<{ trigger?: (next: () => void) => void }>('editor-navigation-block', () => ({}))
+
+  const requestUnsavedChangesConfirmation = (): Promise<'save' | 'discard' | 'cancel'> => {
+    return new Promise((resolve) => {
+      unsavedChangesResolve = resolve
+      showUnsavedChangesModal.value = true
+    })
+  }
+
+  const handleUnsavedChangesChoice = async (choice: 'save' | 'discard' | 'cancel') => {
+    showUnsavedChangesModal.value = false
+
+    if (choice === 'save') {
+      // Handle navigation case
+      if (pendingNavigation) {
+        await save()
+        pendingNavigation()
+        pendingNavigation = null
+      }
+      // Handle manual cancel button case
+      else if (unsavedChangesResolve) {
+        unsavedChangesResolve(choice)
+        unsavedChangesResolve = null
+      }
+    } else if (choice === 'discard') {
+      // Cleanup editor state
+      await disableEditor(true)
+      // Handle navigation case
+      if (pendingNavigation) {
+        pendingNavigation()
+        pendingNavigation = null
+      }
+      // Handle manual cancel button case
+      else if (unsavedChangesResolve) {
+        unsavedChangesResolve(choice)
+        unsavedChangesResolve = null
+      }
+    } else {
+      // Cancel - navigation already blocked by next(false)
+      pendingNavigation = null
+      // Handle manual cancel button case
+      if (unsavedChangesResolve) {
+        unsavedChangesResolve(choice)
+        unsavedChangesResolve = null
+      }
+    }
+  }
+
+  // ===== Keyboard and Lifecycle Event Handlers =====
+  const handleEscapeKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && state.value.isEnabled) {
+      // Only close editor if not actively editing an input/textarea
+      const activeElement = document.activeElement
+      const isEditingTitleOrDescription =
+        (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') &&
+        (activeElement?.closest('[data-editable-title]') || activeElement?.closest('[data-editable-description]'))
+
+      // If editing title or description, let their own Esc handlers deal with it
+      if (isEditingTitleOrDescription) {
+        return
+      }
+
+      // Otherwise, try to close the editor (will show modal if dirty)
+      disableEditor()
+    }
+  }
+
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    if (state.value.isEnabled && state.value.isDirty) {
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+  }
+
+  const setupKeyboardHandlers = () => {
+    if (import.meta.server) return
+
+    window.addEventListener('keydown', handleEscapeKey)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+  }
+
+  const cleanupKeyboardHandlers = () => {
+    if (import.meta.server) return
+
+    window.removeEventListener('keydown', handleEscapeKey)
+    window.removeEventListener('beforeunload', handleBeforeUnload)
+  }
+
+  const setupNavigationGuard = () => {
+    navigationBlock.value = {
+      trigger: (next: () => void) => {
+        pendingNavigation = next
+        showUnsavedChangesModal.value = true
+      }
+    }
+  }
+
+  const cleanupNavigationGuard = () => {
+    navigationBlock.value = {}
   }
 
   const enableEditor = (content: { title: string, description: string, body: string, rawMarkdown: string, filePath: string }) => {
@@ -96,6 +197,10 @@ export const useEditor = () => {
 
     // Notify presence system
     presenceCallbacks.value.setIsEditing?.(true)
+
+    // Setup navigation guard and keyboard handlers
+    setupNavigationGuard()
+    setupKeyboardHandlers()
 
     // Start lock keep-alive (every 60 seconds)
     startKeepAlive()
@@ -256,24 +361,16 @@ export const useEditor = () => {
   const disableEditor = async (force: boolean = false) => {
     // Confirm if there are unsaved changes
     if (state.value.isDirty && !force) {
-      if (confirmationCallback.value.requestConfirmation) {
-        // Use custom confirmation modal
-        const result = await confirmationCallback.value.requestConfirmation()
-        if (result === 'cancel') {
-          return
-        }
-        if (result === 'save') {
-          await save()
-          return // save() already disables editor after saving
-        }
-        // result === 'discard' continues below
-      } else {
-        // Fallback to native confirm if no callback registered
-        const confirmed = confirm('You have unsaved changes. Are you sure you want to exit without saving?')
-        if (!confirmed) {
-          return
-        }
+      // Use the internal modal system
+      const result = await requestUnsavedChangesConfirmation()
+      if (result === 'cancel') {
+        return
       }
+      if (result === 'save') {
+        await save()
+        return // save() already disables editor after saving
+      }
+      // result === 'discard' continues below
     }
 
     // Release lock
@@ -292,6 +389,10 @@ export const useEditor = () => {
 
     // Notify presence system
     presenceCallbacks.value.setIsEditing?.(false)
+
+    // Cleanup handlers
+    cleanupKeyboardHandlers()
+    cleanupNavigationGuard()
 
     // Stop keep-alive
     stopKeepAlive()
@@ -313,6 +414,7 @@ export const useEditor = () => {
     save,
     disableEditor,
     registerPresenceCallback,
-    registerConfirmationCallback
+    showUnsavedChangesModal,
+    handleUnsavedChangesChoice
   }
 }
