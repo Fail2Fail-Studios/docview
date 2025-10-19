@@ -57,15 +57,6 @@ const links = computed(() => {
 
   return [...links, ...(toc?.bottom?.links || [])].filter(Boolean);
 });
-
-<<<<<<< HEAD
-// TOC collapse state
-const tocCollapsed = ref(false);
-=======
-// TOC collapse state - shared with layout
-const tocCollapsed = useState('tocCollapsed', () => false)
->>>>>>> f941aca9c8d334b8a0c98c675b4384f645174f49
-
 // Editor state
 const {
   state: editorState,
