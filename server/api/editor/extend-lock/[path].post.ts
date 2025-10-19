@@ -1,49 +1,26 @@
 import { getFileLockManager } from '../../../utils/FileLockManager'
+import { requireAuthenticatedUser, validateFilePath, validateTabId } from '../../../utils/editor-validation'
 import { requireEditorPermission } from '../../../utils/editor-permissions'
 
 export default defineEventHandler(async (event) => {
   // Check editor permissions (throws 403 if not allowed)
   await requireEditorPermission(event)
 
-  // Get user session
-  const session = await getUserSession(event)
+  // Get authenticated user
+  const user = await requireAuthenticatedUser(event)
 
-  if (!session?.user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Authentication required'
-    })
-  }
+  // Get and validate file path
+  const decodedPath = validateFilePath(event)
 
-  // Get file path from route params
-  const path = getRouterParam(event, 'path')
-
-  if (!path) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'File path is required'
-    })
-  }
-
-  // Get tabId from request body
+  // Get and validate tabId from request body
   const body = await readBody(event)
-  const tabId = body?.tabId
-
-  if (!tabId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Tab ID is required'
-    })
-  }
-
-  // Decode the path
-  const decodedPath = decodeURIComponent(path)
+  const tabId = validateTabId(body)
 
   // Get lock manager
   const lockManager = getFileLockManager()
 
   // Attempt to extend lock
-  const result = lockManager.extendLock(decodedPath, session.user.id, tabId)
+  const result = lockManager.extendLock(decodedPath, user.id, tabId)
 
   if (!result.success) {
     throw createError({

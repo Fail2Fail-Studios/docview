@@ -1,43 +1,25 @@
 import { getFileLockManager } from '../../../utils/FileLockManager'
-import type { DiscordUser } from '../../../../types/auth'
+import { requireAuthenticatedUser, validateFilePath } from '../../../utils/editor-validation'
 
 export default defineEventHandler(async (event) => {
-  // Get user session
-  const session = await getUserSession(event)
+  // Get authenticated user
+  const user = await requireAuthenticatedUser(event)
 
-  if (!session?.user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Authentication required'
-    })
-  }
-
-  // Get file path from route params
-  const path = getRouterParam(event, 'path')
-
-  if (!path) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'File path is required'
-    })
-  }
+  // Get and validate file path
+  const decodedPath = validateFilePath(event)
 
   // Get tabId from request body (optional for backwards compatibility)
   const body = await readBody(event).catch(() => ({}))
   const tabId = body?.tabId
 
-  // Decode the path
-  const decodedPath = decodeURIComponent(path)
-
   // Get lock manager
   const lockManager = getFileLockManager()
 
   // Check if user is admin
-  const user = session.user as DiscordUser
   const isAdmin = user.isAdmin === true
 
   // Attempt to release lock
-  const success = lockManager.releaseLock(decodedPath, session.user.id, tabId, isAdmin)
+  const success = lockManager.releaseLock(decodedPath, user.id, tabId, isAdmin)
 
   if (!success) {
     const lockInfo = lockManager.getLockInfo(decodedPath)

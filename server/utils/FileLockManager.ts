@@ -5,6 +5,8 @@
  * Locks are per-file and include automatic expiration.
  */
 
+import { getEditorLockTimeout } from '../../app/constants'
+
 export interface FileLock {
   filePath: string
   userId: string
@@ -32,9 +34,10 @@ class FileLockManager {
   private readonly lockTimeoutMs: number
   private cleanupInterval: NodeJS.Timeout | null
 
-  constructor(lockTimeoutMs: number = 30 * 60 * 1000) { // 30 minutes default
+  constructor(lockTimeoutMs?: number) {
     this.locks = new Map()
-    this.lockTimeoutMs = lockTimeoutMs
+    // Use provided timeout or get from centralized constants
+    this.lockTimeoutMs = lockTimeoutMs ?? getEditorLockTimeout()
     this.cleanupInterval = null
     this.startCleanupInterval()
   }
@@ -303,9 +306,9 @@ let lockManagerInstance: FileLockManager | null = null
 
 export function getFileLockManager(): FileLockManager {
   if (!lockManagerInstance) {
-    // Get timeout from environment or use default (30 minutes)
-    const timeoutMs = parseInt(process.env.FILE_LOCK_TIMEOUT_MS || '1800000')
-    lockManagerInstance = new FileLockManager(timeoutMs)
+    // Use centralized constant (which reads from env)
+    lockManagerInstance = new FileLockManager()
+    const timeoutMs = lockManagerInstance['lockTimeoutMs']
     console.log(`[FileLockManager] Initialized with ${timeoutMs / 1000 / 60} minute timeout`)
   }
   return lockManagerInstance

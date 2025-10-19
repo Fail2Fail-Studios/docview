@@ -2,9 +2,8 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { execGitCommand } from '../../../utils/git-auth'
 import { getFileLockManager } from '../../../utils/FileLockManager'
-import { requireEditorPermission } from '../../../utils/editor-permissions'
+import { requireLockOwnership } from '../../../utils/editor-validation'
 import { versionCache } from '../../../utils/version-cache'
-import type { DiscordUser } from '../../../../types/auth'
 
 interface SavePayload {
   title: string
@@ -14,33 +13,11 @@ interface SavePayload {
 }
 
 export default defineEventHandler(async (event) => {
-  // Check editor permissions (throws 403 if not allowed)
-  await requireEditorPermission(event)
+  // Get lock manager
+  const lockManager = getFileLockManager()
 
-  // Get user session
-  const session = await getUserSession(event)
-
-  if (!session?.user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Authentication required'
-    })
-  }
-
-  const user = session.user as DiscordUser
-
-  // Get file path from route params
-  const path = getRouterParam(event, 'path')
-
-  if (!path) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'File path is required'
-    })
-  }
-
-  // Decode the path
-  const decodedPath = decodeURIComponent(path)
+  // Validate editor permissions, authentication, and lock ownership
+  const { user, filePath: decodedPath } = await requireLockOwnership(event, lockManager, false)
 
   // Get runtime config
   const config = useRuntimeConfig()
@@ -63,8 +40,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Verify user owns the lock
-  const lockManager = getFileLockManager()
+  // Verify lock exists (ownership already validated by requireLockOwnership)
   const lockInfo = lockManager.getLockInfo(decodedPath)
 
   if (!lockInfo) {
@@ -74,17 +50,25 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (lockInfo.userId !== user.id && !user.isAdmin) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'You do not own the lock for this file'
-    })
-  }
-
   try {
     // Read existing file to preserve other front matter fields
     const fullPath = join(gitRepoPath, 'content', decodedPath)
-    const existingContent = await fs.readFile(fullPath, 'utf-8')
+    let existingContent: string
+
+    try {
+      existingContent = await fs.readFile(fullPath, 'utf-8')
+    } catch (error: any) {
+      console.error('[editor/save] Failed to read file:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to read file',
+        data: {
+          error: 'File read error',
+          details: `Could not read file at ${decodedPath}. The file may not exist or is inaccessible.`,
+          filePath: decodedPath
+        }
+      })
+    }
 
     // Parse existing front matter
     const frontMatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/
@@ -92,7 +76,7 @@ export default defineEventHandler(async (event) => {
 
     const existingFrontMatter: Record<string, any> = {}
 
-    if (match) {
+    if (match && match[1]) {
       const frontMatterText = match[1]
       // Simple YAML parsing - just preserve lines that aren't title or description
       const lines = frontMatterText.split('\n')
@@ -138,10 +122,25 @@ export default defineEventHandler(async (event) => {
 
       if (hasUncommittedChanges) {
         console.log('[editor/save] Uncommitted changes detected, stashing...')
-        await execGitCommand(gitRepoPath, ['stash', 'push', '-u', '-m', 'Editor auto-stash before pull'])
-        stashCreated = true
+        try {
+          await execGitCommand(gitRepoPath, ['stash', 'push', '-u', '-m', 'Editor auto-stash before pull'])
+          stashCreated = true
+        } catch (stashError: any) {
+          console.error('[editor/save] Failed to stash changes:', stashError)
+          throw createError({
+            statusCode: 500,
+            statusMessage: 'Failed to stash changes',
+            data: {
+              error: 'Git stash error',
+              details: 'Could not stash uncommitted changes before pull. Please ensure git is configured correctly.',
+              gitError: stashError.message
+            }
+          })
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Re-throw if it's already a createError
+      if (error.statusCode) throw error
       console.warn('[editor/save] Failed to check git status, continuing anyway:', error)
     }
 
@@ -149,9 +148,24 @@ export default defineEventHandler(async (event) => {
     try {
       await execGitCommand(gitRepoPath, ['pull', '--rebase'])
       console.log('[editor/save] Successfully pulled latest changes')
-    } catch (error) {
-      console.warn('[editor/save] Pull failed, continuing with local changes:', error)
-      // Continue anyway - the lock system should prevent conflicts
+    } catch (error: any) {
+      console.error('[editor/save] Pull failed:', error)
+
+      // Check for specific git pull errors
+      if (error.message?.includes('Authentication') || error.message?.includes('Permission denied')) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: 'Git authentication failed',
+          data: {
+            error: 'Git pull authentication error',
+            details: 'Failed to authenticate with the git repository. Please check git credentials configuration.',
+            gitError: error.message
+          }
+        })
+      }
+
+      // For other pull errors, log but continue - lock system should prevent conflicts
+      console.warn('[editor/save] Pull failed, continuing with local changes (lock system prevents conflicts)')
     }
 
     // 3. Pop stash if we created one
@@ -159,18 +173,53 @@ export default defineEventHandler(async (event) => {
       try {
         await execGitCommand(gitRepoPath, ['stash', 'pop'])
         console.log('[editor/save] Successfully restored stashed changes')
-      } catch (error) {
-        console.warn('[editor/save] Failed to pop stash, may need manual resolution:', error)
-        // Continue anyway - we'll commit our changes
+      } catch (error: any) {
+        console.error('[editor/save] Failed to pop stash:', error)
+        throw createError({
+          statusCode: 500,
+          statusMessage: 'Failed to restore stashed changes',
+          data: {
+            error: 'Git stash pop error',
+            details: 'Could not restore previously stashed changes. Manual intervention may be required.',
+            gitError: error.message
+          }
+        })
       }
     }
 
     // 4. Write file
-    await fs.writeFile(fullPath, newContent, 'utf-8')
-    console.log('[editor/save] File written successfully')
+    try {
+      await fs.writeFile(fullPath, newContent, 'utf-8')
+      console.log('[editor/save] File written successfully')
+    } catch (error: any) {
+      console.error('[editor/save] Failed to write file:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to write file',
+        data: {
+          error: 'File write error',
+          details: `Could not write content to ${decodedPath}. Check file permissions and disk space.`,
+          filePath: decodedPath,
+          systemError: error.message
+        }
+      })
+    }
 
     // 5. Git add
-    await execGitCommand(gitRepoPath, ['add', join('content', decodedPath)])
+    try {
+      await execGitCommand(gitRepoPath, ['add', join('content', decodedPath)])
+    } catch (error: any) {
+      console.error('[editor/save] Failed to stage file:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to stage file',
+        data: {
+          error: 'Git add error',
+          details: 'Could not stage file for commit. Git repository may be in an inconsistent state.',
+          gitError: error.message
+        }
+      })
+    }
 
     // 6. Git commit with author info
     const userName = user.name || user.username
@@ -179,18 +228,51 @@ export default defineEventHandler(async (event) => {
 
     // Set author environment variables instead of using --author flag
     // This avoids shell escaping issues with special characters
-    await execGitCommand(gitRepoPath, [
-      '-c',
-      `user.name=${userName}`,
-      '-c',
-      `user.email=${authorEmail}`,
-      'commit',
-      '-m',
-      commitMsg
-    ])
+    try {
+      await execGitCommand(gitRepoPath, [
+        '-c',
+        `user.name=${userName}`,
+        '-c',
+        `user.email=${authorEmail}`,
+        'commit',
+        '-m',
+        commitMsg
+      ])
+    } catch (error: any) {
+      console.error('[editor/save] Failed to commit:', error)
+
+      // Check if it's a "nothing to commit" error (not actually an error)
+      if (error.message?.includes('nothing to commit')) {
+        // Handle below in the catch block
+        throw error
+      }
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to commit changes',
+        data: {
+          error: 'Git commit error',
+          details: 'Could not commit changes to git repository. Your changes have been written but not committed.',
+          gitError: error.message
+        }
+      })
+    }
 
     // 7. Git push
-    await execGitCommand(gitRepoPath, ['push'])
+    try {
+      await execGitCommand(gitRepoPath, ['push'])
+    } catch (error: any) {
+      console.error('[editor/save] Failed to push:', error)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to push changes',
+        data: {
+          error: 'Git push error',
+          details: 'Changes were committed locally but could not be pushed to remote. Your changes are saved locally and will be pushed on next sync.',
+          gitError: error.message
+        }
+      })
+    }
 
     console.log('[editor/save] Git workflow completed successfully')
 
@@ -200,7 +282,7 @@ export default defineEventHandler(async (event) => {
     // Note: Content is immediately available via symlink - no sync needed
 
     // 8. Release the lock
-    lockManager.releaseLock(decodedPath, user.id, user.isAdmin)
+    lockManager.releaseLock(decodedPath, user.id, undefined, user.isAdmin)
 
     return {
       success: true,
@@ -216,7 +298,7 @@ export default defineEventHandler(async (event) => {
     // Check for common git errors
     if (error.message?.includes('nothing to commit')) {
       // No changes detected - this is not an error
-      lockManager.releaseLock(decodedPath, user.id, user.isAdmin)
+      lockManager.releaseLock(decodedPath, user.id, undefined, user.isAdmin)
 
       return {
         success: true,
@@ -227,12 +309,19 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // If error already has a statusCode (from createError), re-throw it
+    if (error.statusCode) {
+      throw error
+    }
+
+    // Generic error fallback
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to save content',
       data: {
-        error: error.message,
-        details: error.toString()
+        error: 'Save operation failed',
+        details: error.message || 'An unexpected error occurred during save. Please try again.',
+        originalError: error.toString()
       }
     })
   }

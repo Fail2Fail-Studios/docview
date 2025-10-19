@@ -1,28 +1,55 @@
 import type { PresenceTabEntry, PresenceSnapshot, PresenceSnapshotUser } from '../../types/presence'
-
-const PRESENCE_TTL_MS = 45_000 // 45 seconds
+import { getPresenceTTL, PRESENCE_CLEANUP_INTERVAL } from '../../app/constants'
 
 // Module-scoped singleton registry
 const registry = new Map<string, Map<string, PresenceTabEntry>>()
 
+// Scheduled cleanup interval
+let cleanupInterval: NodeJS.Timeout | null = null
+let lastCleanup = Date.now()
+
 function cleanup() {
   const now = Date.now()
+  const ttl = getPresenceTTL()
+  let cleanedCount = 0
+
   for (const [pagePath, tabs] of registry.entries()) {
     for (const [tabId, entry] of tabs.entries()) {
-      if (now - entry.lastSeenAt > PRESENCE_TTL_MS) {
+      if (now - entry.lastSeenAt > ttl) {
         tabs.delete(tabId)
+        cleanedCount++
       }
     }
     if (tabs.size === 0) {
       registry.delete(pagePath)
     }
   }
+
+  if (cleanedCount > 0) {
+    console.log(`[PresenceRegistry] Cleaned up ${cleanedCount} expired presence entries`)
+  }
+
+  lastCleanup = now
 }
+
+// Start scheduled cleanup if not already running
+function ensureCleanupScheduled() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(() => {
+      cleanup()
+    }, PRESENCE_CLEANUP_INTERVAL)
+
+    console.log(`[PresenceRegistry] Started scheduled cleanup every ${PRESENCE_CLEANUP_INTERVAL / 1000}s`)
+  }
+}
+
+// Initialize cleanup on first use
+ensureCleanupScheduled()
 
 export function usePresenceRegistry() {
   return {
     join(pagePath: string, tabId: string, userId: string): void {
-      cleanup()
+      // No longer call cleanup on every operation - scheduled cleanup handles it
       if (!registry.has(pagePath)) {
         registry.set(pagePath, new Map())
       }
@@ -35,7 +62,7 @@ export function usePresenceRegistry() {
     },
 
     heartbeat(pagePath: string, tabId: string, userId: string, isEditing: boolean): void {
-      cleanup()
+      // No longer call cleanup on every operation - scheduled cleanup handles it
       if (!registry.has(pagePath)) {
         registry.set(pagePath, new Map())
       }
@@ -48,7 +75,7 @@ export function usePresenceRegistry() {
     },
 
     leave(pagePath: string, tabId: string): void {
-      cleanup()
+      // No longer call cleanup on every operation - scheduled cleanup handles it
       const tabs = registry.get(pagePath)
       if (tabs) {
         tabs.delete(tabId)
@@ -59,7 +86,12 @@ export function usePresenceRegistry() {
     },
 
     async list(pagePath: string, getUserData: (userId: string) => Promise<{ id: string, name: string, avatar?: string }>): Promise<PresenceSnapshot> {
-      cleanup()
+      // Check if cleanup needed (only if it's been a while since last cleanup)
+      const now = Date.now()
+      if (now - lastCleanup > PRESENCE_CLEANUP_INTERVAL) {
+        cleanup()
+      }
+
       const tabs = registry.get(pagePath)
       if (!tabs || tabs.size === 0) {
         return {
@@ -97,6 +129,16 @@ export function usePresenceRegistry() {
       }
     },
 
-    cleanup
+    // Manual cleanup trigger (for testing or emergency use)
+    cleanup,
+
+    // Stop scheduled cleanup (for testing or shutdown)
+    stopCleanup() {
+      if (cleanupInterval) {
+        clearInterval(cleanupInterval)
+        cleanupInterval = null
+        console.log('[PresenceRegistry] Stopped scheduled cleanup')
+      }
+    }
   }
 }

@@ -1,3 +1,5 @@
+import { PRESENCE_HEARTBEAT_INTERVAL, PRESENCE_HEARTBEAT_THROTTLE_MS } from '~/app/constants'
+
 export interface PresenceSnapshotUser {
   id: string
   name: string
@@ -15,6 +17,10 @@ export interface UsePagePresence {
 export function usePagePresence(pagePath: MaybeRefOrGetter<string>): UsePagePresence {
   const route = useRoute()
   const isEditing = ref(false)
+
+  // Throttling state for heartbeat
+  let lastHeartbeatTime = 0
+  let throttledHeartbeatTimeout: NodeJS.Timeout | null = null
 
   // Generate or retrieve tab ID
   const getTabId = () => {
@@ -68,17 +74,47 @@ export function usePagePresence(pagePath: MaybeRefOrGetter<string>): UsePagePres
 
   const sendHeartbeat = async () => {
     if (!tabId.value) return
-    try {
-      await $fetch('/api/presence/heartbeat', {
-        method: 'POST',
-        body: {
-          pagePath: currentPath.value,
-          tabId: tabId.value,
-          isEditing: isEditing.value
+
+    const now = Date.now()
+    const timeSinceLastHeartbeat = now - lastHeartbeatTime
+
+    // If enough time has passed, send immediately
+    if (timeSinceLastHeartbeat >= PRESENCE_HEARTBEAT_THROTTLE_MS) {
+      lastHeartbeatTime = now
+      try {
+        await $fetch('/api/presence/heartbeat', {
+          method: 'POST',
+          body: {
+            pagePath: currentPath.value,
+            tabId: tabId.value,
+            isEditing: isEditing.value
+          }
+        })
+      } catch (error) {
+        console.error('[usePagePresence] Failed to send heartbeat:', error)
+      }
+    } else {
+      // Otherwise, schedule for later (throttled)
+      if (throttledHeartbeatTimeout) {
+        clearTimeout(throttledHeartbeatTimeout)
+      }
+
+      const timeUntilNextAllowed = PRESENCE_HEARTBEAT_THROTTLE_MS - timeSinceLastHeartbeat
+      throttledHeartbeatTimeout = setTimeout(async () => {
+        lastHeartbeatTime = Date.now()
+        try {
+          await $fetch('/api/presence/heartbeat', {
+            method: 'POST',
+            body: {
+              pagePath: currentPath.value,
+              tabId: tabId.value,
+              isEditing: isEditing.value
+            }
+          })
+        } catch (error) {
+          console.error('[usePagePresence] Failed to send throttled heartbeat:', error)
         }
-      })
-    } catch (error) {
-      console.error('[usePagePresence] Failed to send heartbeat:', error)
+      }, timeUntilNextAllowed)
     }
   }
 
@@ -104,7 +140,7 @@ export function usePagePresence(pagePath: MaybeRefOrGetter<string>): UsePagePres
     }
     heartbeatInterval = setInterval(() => {
       sendHeartbeat()
-    }, 15_000) // Every 15 seconds
+    }, PRESENCE_HEARTBEAT_INTERVAL)
   }
 
   const startPolling = () => {
@@ -124,6 +160,10 @@ export function usePagePresence(pagePath: MaybeRefOrGetter<string>): UsePagePres
     if (pollInterval) {
       clearInterval(pollInterval)
       pollInterval = null
+    }
+    if (throttledHeartbeatTimeout) {
+      clearTimeout(throttledHeartbeatTimeout)
+      throttledHeartbeatTimeout = null
     }
   }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type Editor from '@toast-ui/editor'
+import { EDITOR_CONTENT_DEBOUNCE_MS } from '~/app/constants'
 
 // Force client-side only rendering for Toast UI Editor
 defineOptions({
@@ -17,6 +18,19 @@ const emit = defineEmits<{
 const { updateBody } = useEditor()
 const editorContainer = ref<HTMLDivElement>()
 let editorInstance: Editor | null = null
+let debounceTimeout: NodeJS.Timeout | null = null
+
+// Debounced update function
+const debouncedUpdate = (markdown: string) => {
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout)
+  }
+
+  debounceTimeout = setTimeout(() => {
+    emit('update:modelValue', markdown)
+    updateBody(markdown)
+  }, EDITOR_CONTENT_DEBOUNCE_MS)
+}
 
 // Initialize editor after mount with dynamic import
 onMounted(async () => {
@@ -46,8 +60,7 @@ onMounted(async () => {
       change: () => {
         if (!editorInstance) return
         const markdown = editorInstance.getMarkdown()
-        emit('update:modelValue', markdown)
-        updateBody(markdown)
+        debouncedUpdate(markdown)
       }
     }
   })
@@ -64,6 +77,11 @@ watch(() => props.modelValue, (newValue) => {
 
 // Cleanup on unmount
 onUnmounted(() => {
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout)
+    debounceTimeout = null
+  }
+
   if (editorInstance) {
     editorInstance.destroy()
     editorInstance = null
