@@ -56,26 +56,59 @@ ARG NUXT_GIT_BRANCH=main
 ARG NUXT_GIT_USERNAME
 ARG NUXT_GIT_TOKEN
 
+# Set CI mode to prevent interactive prompts and force clean exits
+ENV CI=true
+ENV NODE_ENV=production
+# Disable file watchers and dev-only features
+ENV CHOKIDAR_USEPOLLING=false
+ENV WATCHPACK_POLLING=false
+ENV NO_COLOR=1
+
 # Copy all source files
 COPY . .
 
-# Ensure entrypoint is executable for build-time git operations
-RUN chmod +x scripts/entrypoint.sh
+# Ensure scripts are executable for build-time operations
+RUN chmod +x scripts/entrypoint.sh scripts/docker-build.sh
 
 # Clone content repository during build if URL provided
 RUN if [ -n "${NUXT_GIT_REPO_URL}" ]; then \
-      echo "[builder] Cloning content for build..."; \
+      echo "[builder] ===== Starting content sync at $(date) ====="; \
       export NUXT_GIT_REPO_URL="${NUXT_GIT_REPO_URL}"; \
       export NUXT_GIT_BRANCH="${NUXT_GIT_BRANCH}"; \
       export NUXT_GIT_USERNAME="${NUXT_GIT_USERNAME}"; \
       export NUXT_GIT_TOKEN="${NUXT_GIT_TOKEN}"; \
-      bash scripts/entrypoint.sh echo "Content synced for build"; \
+      timeout 300 bash scripts/entrypoint.sh echo "Content synced for build" || true; \
+      echo "[builder] ===== Content sync completed at $(date) ====="; \
     else \
       echo "[builder] No NUXT_GIT_REPO_URL provided, building without external content"; \
     fi
 
 # Build the Nuxt application (content must exist before this step)
-RUN pnpm build
+# Use wrapper script with timeout to ensure clean exit
+RUN set -x && \
+    echo "[builder] ===== Starting build process at $(date) =====" && \
+    echo "[builder] Process list before build:" && \
+    ps aux | head -20 && \
+    echo "[builder] Starting build with 600s timeout..." && \
+    timeout --foreground --kill-after=10s 600s bash scripts/docker-build.sh; \
+    exit_code=$?; \
+    echo "[builder] Build wrapper exit code: ${exit_code}" && \
+    echo "[builder] ===== Build process completed at $(date) =====" && \
+    echo "[builder] Process list after build:" && \
+    ps aux | head -20 && \
+    echo "[builder] Aggressively killing any lingering node processes..." && \
+    pkill -9 -f "node.*nuxt" || true && \
+    pkill -9 -f "node.*vite" || true && \
+    pkill -9 node || true && \
+    sleep 3 && \
+    echo "[builder] Final process check:" && \
+    ps aux | grep -E "node|pnpm" | grep -v grep || echo "No node processes found" && \
+    echo "[builder] ===== Build stage complete at $(date) =====" && \
+    if [ ${exit_code} -eq 124 ] || [ ${exit_code} -eq 137 ]; then \
+      echo "[builder] ERROR: Build timed out!" && exit 1; \
+    elif [ ${exit_code} -ne 0 ]; then \
+      echo "[builder] ERROR: Build failed with exit code ${exit_code}" && exit ${exit_code}; \
+    fi
 
 # ============================================
 # Production Stage - Serve built .output

@@ -138,11 +138,6 @@ onMounted(() => {
       :links="page.links"
       :headline="headline"
     />
-
-<<<<<<< HEAD
-    <UPageBody v-show="!editorState.isEnabled" id="main-content">
-      <ContentRenderer v-if="page" :value="page" />
-=======
     <UPageBody
       v-show="!editorState.isEnabled"
       id="main-content"
@@ -152,8 +147,6 @@ onMounted(() => {
         v-if="page"
         :value="page"
       />
->>>>>>> 7013010 (fix(page): add left margin to main content for improved layout)
-
       <USeparator v-if="surround?.length" />
 
       <UContentSurround :surround="surround" />
@@ -206,9 +199,9 @@ onMounted(() => {
 
     <template #footer>
       <div class="flex flex-col gap-2 sm:flex-row-reverse">
-        <UButton color="green" icon="i-lucide-save" label="Save & Close" size="sm" @click="handleUnsavedChangesChoice('save')" />
-        <UButton color="red" variant="soft" icon="i-lucide-trash-2" label="Discard Changes" size="sm" @click="handleUnsavedChangesChoice('discard')" />
-        <UButton color="gray" variant="ghost" label="Cancel" size="sm" @click="handleUnsavedChangesChoice('cancel')" />
+        <UButton color="success" icon="i-lucide-save" label="Save & Close" size="sm" @click="handleUnsavedChangesChoice('save')" />
+        <UButton color="primary" variant="soft" icon="i-lucide-trash-2" label="Discard Changes" size="sm" @click="handleUnsavedChangesChoice('discard')" />
+        <UButton color="neutral" variant="ghost" label="Cancel" size="sm" @click="handleUnsavedChangesChoice('cancel')" />
       </div>
     </template>
   </UModal>

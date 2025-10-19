@@ -34,22 +34,32 @@ function cleanup() {
 
 // Start scheduled cleanup if not already running
 function ensureCleanupScheduled() {
+  // Skip interval during build/prerendering to avoid hanging the build process
+  if (import.meta.prerender || process.env.NITRO_PRESET === 'nitro-prerender') {
+    return
+  }
+  
   if (!cleanupInterval) {
     cleanupInterval = setInterval(() => {
       cleanup()
     }, PRESENCE_CLEANUP_INTERVAL)
 
+    // Only log when interval actually starts
     console.log(`[PresenceRegistry] Started scheduled cleanup every ${PRESENCE_CLEANUP_INTERVAL / 1000}s`)
   }
 }
 
-// Initialize cleanup on first use
-ensureCleanupScheduled()
+// Initialize cleanup on first use - but only during runtime, not build
+if (!import.meta.prerender && process.env.NITRO_PRESET !== 'nitro-prerender') {
+  ensureCleanupScheduled()
+}
 
 export function usePresenceRegistry() {
   return {
     join(pagePath: string, tabId: string, userId: string): void {
-      // No longer call cleanup on every operation - scheduled cleanup handles it
+      // Ensure cleanup is scheduled when registry is actually used at runtime
+      ensureCleanupScheduled()
+      
       if (!registry.has(pagePath)) {
         registry.set(pagePath, new Map())
       }
@@ -62,7 +72,9 @@ export function usePresenceRegistry() {
     },
 
     heartbeat(pagePath: string, tabId: string, userId: string, isEditing: boolean): void {
-      // No longer call cleanup on every operation - scheduled cleanup handles it
+      // Ensure cleanup is scheduled when registry is actually used at runtime
+      ensureCleanupScheduled()
+      
       if (!registry.has(pagePath)) {
         registry.set(pagePath, new Map())
       }

@@ -148,7 +148,7 @@ export default defineNuxtConfig({
         // Use the same port as the dev server (3000)
       },
       watch: {
-        usePolling: true // Better compatibility with Docker volumes
+        usePolling: process.env.NODE_ENV !== 'production' // Only use polling in dev
       }
     },
     optimizeDeps: {
