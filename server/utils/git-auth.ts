@@ -50,6 +50,7 @@ export interface GitAuthResult {
 export class GitAuthManager {
   private repoPath: string
   private credentials?: GitCredentials
+  private createdScripts: Set<string> = new Set()
 
   constructor(repoPath: string, credentials?: GitCredentials) {
     this.repoPath = repoPath
@@ -164,6 +165,11 @@ fi`
     }
 
     writeFileSync(scriptPath, scriptContent, { mode: 0o755 })
+
+    // Track the created script for cleanup
+    this.createdScripts.add(scriptPath)
+    console.log(`[GitAuthManager] Created credential helper script: ${scriptPath}`)
+
     return scriptPath
   }
 
@@ -171,28 +177,29 @@ fi`
    * Attempt Git pull using multiple authentication methods
    */
   async performAuthenticatedPull(branch: string = 'main'): Promise<GitAuthResult> {
-    // Method 1: Try credential helper if credentials are available
-    if (this.credentials) {
-      console.log('Attempting Git pull with credential helper...')
-      const credentialSetup = await this.setupCredentialHelper()
+    try {
+      // Method 1: Try credential helper if credentials are available
+      if (this.credentials) {
+        console.log('Attempting Git pull with credential helper...')
+        const credentialSetup = await this.setupCredentialHelper()
 
-      if (credentialSetup.success) {
-        try {
-          const { stdout, stderr } = await execAsync(`git pull origin ${branch}`, {
-            cwd: this.repoPath,
-            timeout: 60000
-          })
+        if (credentialSetup.success) {
+          try {
+            const { stdout, stderr } = await execAsync(`git pull origin ${branch}`, {
+              cwd: this.repoPath,
+              timeout: 60000
+            })
 
-          return {
-            success: true,
-            method: 'credential-helper',
-            message: this.parseGitOutput(stdout)
+            return {
+              success: true,
+              method: 'credential-helper',
+              message: this.parseGitOutput(stdout)
+            }
+          } catch (error: any) {
+            console.warn('Credential helper method failed:', error.message)
+            // Continue to next method
           }
-        } catch (error: any) {
-          console.warn('Credential helper method failed:', error.message)
-          // Continue to next method
         }
-      }
 
       // Method 2: Try URL authentication as fallback
       console.log('Attempting Git pull with URL authentication...')
@@ -258,12 +265,16 @@ fi`
       console.warn('SSH method failed:', error.message)
     }
 
-    // All methods failed
-    return {
-      success: false,
-      method: 'local-config',
-      message: 'All authentication methods failed',
-      error: 'Unable to authenticate with Git repository using any available method'
+      // All methods failed
+      return {
+        success: false,
+        method: 'local-config',
+        message: 'All authentication methods failed',
+        error: 'Unable to authenticate with Git repository using any available method'
+      }
+    } finally {
+      // Always cleanup temporary scripts after pull attempt
+      this.cleanup()
     }
   }
 
@@ -359,7 +370,32 @@ fi`
    * Cleanup any temporary files created by credential helper
    */
   cleanup(): void {
-    // This would clean up any temporary credential helper scripts
-    // Implementation depends on how we track created temporary files
+    let cleanedCount = 0
+
+    for (const scriptPath of this.createdScripts) {
+      try {
+        if (existsSync(scriptPath)) {
+          unlinkSync(scriptPath)
+          cleanedCount++
+          console.log(`[GitAuthManager] Cleaned up credential helper script: ${scriptPath}`)
+        }
+      } catch (error: any) {
+        console.error(`[GitAuthManager] Failed to cleanup script ${scriptPath}:`, error.message)
+      }
+    }
+
+    // Clear the tracking set
+    this.createdScripts.clear()
+
+    if (cleanedCount > 0) {
+      console.log(`[GitAuthManager] Cleaned up ${cleanedCount} temporary credential helper script(s)`)
+    }
+  }
+
+  /**
+   * Get count of tracked temporary scripts
+   */
+  getTrackedScriptCount(): number {
+    return this.createdScripts.size
   }
 }
